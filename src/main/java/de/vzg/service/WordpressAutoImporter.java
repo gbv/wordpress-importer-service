@@ -12,6 +12,7 @@ import de.vzg.service.wordpress.model.Post;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,11 +44,11 @@ public class WordpressAutoImporter implements Runnable, ServletContextListener {
 
     @Override
     public void run() {
-        try {
-            final Map<String, ImporterConfigurationPart> configurationPartMap = ImporterConfiguration.getConfiguration()
+        final Map<String, ImporterConfigurationPart> configurationPartMap = ImporterConfiguration.getConfiguration()
                 .getParts();
-            final Set<String> configs = configurationPartMap.keySet();
+        final Set<String> configs = configurationPartMap.keySet();
 
+        try {
             final List<String> autoConfigurations = configs.stream()
                 .filter(configName -> configurationPartMap.get(configName).isAuto()).collect(Collectors.toList());
 
@@ -145,6 +146,24 @@ public class WordpressAutoImporter implements Runnable, ServletContextListener {
 
         } catch (Throwable e) {
             LOGGER.error("Error while running autoimporter!", e);
+        }
+
+
+        try {
+           HashSet<String> repos = new HashSet<>();
+           HashSet<String> blogs = new HashSet<>();
+            for (final String configurationName : configs) {
+                final ImporterConfigurationPart config = configurationPartMap.get(configurationName);
+                String repository = config.getRepository();
+                String blog = config.getBlog();
+                repos.add(repository);
+                blogs.add(blog);
+            }
+            blogs.stream().map(LocalPostStore::getInstance).forEach(LocalPostStore::saveToFile);
+            repos.stream().map(LocalMyCoReObjectStore::getInstance).forEach(LocalMyCoReObjectStore::saveToFile);
+        } catch (Throwable e) {
+            LOGGER.error("Error while storing DBs!", e);
+
         }
     }
 

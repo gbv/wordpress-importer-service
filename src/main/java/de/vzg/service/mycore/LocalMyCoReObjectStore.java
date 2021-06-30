@@ -18,6 +18,8 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -62,9 +64,9 @@ public class LocalMyCoReObjectStore {
         }
     }
 
-    private void loadFromFile() {
+    private synchronized void loadFromFile() {
         Path databasePath = getDatabasePath();
-        try (InputStream is = Files.newInputStream(databasePath)) {
+        try (InputStream is = new GZIPInputStream(Files.newInputStream(databasePath))) {
             try (InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
                 final LocalMyCoReObjectStore savedStore = getGson().fromJson(isr, LocalMyCoReObjectStore.class);
                 lastCheckDate = savedStore.lastCheckDate;
@@ -124,19 +126,17 @@ public class LocalMyCoReObjectStore {
                 }
             });
             lastCheckDate = date;
-            saveToFile();
         } else {
             LOGGER.debug("No update needed! {}<{}", new Date().getTime() - lastCheckDate.getTime(), FIFTEEN_MINUTES);
         }
     }
 
-    private void saveToFile() {
+    public synchronized void saveToFile() {
         final Gson gson = getGson();
 
         final Path dbPath = getDatabasePath();
-        try (OutputStream os = Files
-            .newOutputStream(dbPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
-                StandardOpenOption.SYNC)) {
+        try (OutputStream os = new GZIPOutputStream(Files
+            .newOutputStream(dbPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
             try (Writer writer = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
                 gson.toJson(this, writer);
             }

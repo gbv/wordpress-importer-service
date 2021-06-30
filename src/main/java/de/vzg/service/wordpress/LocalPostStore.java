@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -47,12 +49,11 @@ public class LocalPostStore {
 
     }
 
-    private void saveToFile() {
+    public synchronized void saveToFile() {
         final Gson gson = getGson();
         final Path dbPath = getDatabasePath();
-        try (OutputStream os = Files
-            .newOutputStream(dbPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
-                StandardOpenOption.SYNC)) {
+        try (OutputStream os = new GZIPOutputStream(Files
+            .newOutputStream(dbPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
             try (Writer writer = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
                 gson.toJson(this, writer);
             }
@@ -61,9 +62,9 @@ public class LocalPostStore {
         }
     }
 
-    private void loadFromFile() {
+    private synchronized void loadFromFile() {
         Path databasePath = getDatabasePath();
-        try (InputStream is = Files.newInputStream(databasePath)) {
+        try (InputStream is = new GZIPInputStream(Files.newInputStream(databasePath))) {
             try (InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
                 final LocalPostStore savedStore = getGson().fromJson(isr, LocalPostStore.class);
                 this.idPostMap = savedStore.idPostMap;
@@ -91,9 +92,6 @@ public class LocalPostStore {
             posts.forEach(p -> this.idPostMap.put(p.getId(), p));
 
             this.lastUpdate = currentDate;
-            if (posts.size() > 0) {
-                saveToFile();
-            }
         } catch (IOException e) {
             throw new RuntimeException("Error while gettings Posts from " + this.instanceURL, e);
         }
@@ -113,7 +111,7 @@ public class LocalPostStore {
     }
 
     private String getDatabaseName() {
-        return "blogdb_" + getHost() + ".json";
+        return "blogdb_" + getHost() + ".gzip.json";
     }
 
     public Post getPost(int id){
