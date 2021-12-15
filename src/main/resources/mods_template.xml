@@ -38,6 +38,13 @@
           <mods:location>
             <mods:url access="raw object"></mods:url>
           </mods:location>
+          <mods:recordInfo>
+            <mods:recordIdentifier></mods:recordIdentifier>
+            <mods:recordContentSource></mods:recordContentSource>
+            <mods:recordOrigin>Record has been transformed into Mods from the Wordpress REST-API using the
+              Wordpress-Importer-Service available here: https://github.com/gbv/wordpress-importer-service
+            </mods:recordOrigin>
+          </mods:recordInfo>
         </mods:mods>
       </modsContainer>
     </def.modsContainer>

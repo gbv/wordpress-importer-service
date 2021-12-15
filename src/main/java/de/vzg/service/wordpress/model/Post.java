@@ -25,15 +25,13 @@ public class Post {
 
     private int id, author;
 
-    private List<Integer> authors;
+    private MayAuthorList authors;
 
-    private String wps_subtitle, date, date_gmt, modified, modified_gmt, slug, status, link, comment_status, ping_status, format;
+    private String wps_subtitle, date, modified, link;
 
     private PostContent title, content;
 
-    private List<Integer> categories, tags;
-
-    private Map<String, String> guid;
+    private String layout_flexible_0_text_area, subline;
 
     public int getId() {
         return id;
@@ -59,14 +57,6 @@ public class Post {
         this.date = date;
     }
 
-    public String getDateGmt() {
-        return date_gmt;
-    }
-
-    public void setDateGmt(String date_gmt) {
-        this.date_gmt = date_gmt;
-    }
-
     public String getModified() {
         return modified;
     }
@@ -75,29 +65,6 @@ public class Post {
         this.modified = modified;
     }
 
-    public String getModifiedGmt() {
-        return modified_gmt;
-    }
-
-    public void setModifiedGmt(String modified_gmt) {
-        this.modified_gmt = modified_gmt;
-    }
-
-    public String getSlug() {
-        return slug;
-    }
-
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
 
     public String getLink() {
         return link;
@@ -105,30 +72,6 @@ public class Post {
 
     public void setLink(String link) {
         this.link = link;
-    }
-
-    public String getCommentStatus() {
-        return comment_status;
-    }
-
-    public void setCommentStatus(String comment_status) {
-        this.comment_status = comment_status;
-    }
-
-    public String getPingStatus() {
-        return ping_status;
-    }
-
-    public void setPingStatus(String ping_status) {
-        this.ping_status = ping_status;
-    }
-
-    public String getFormat() {
-        return format;
-    }
-
-    public void setFormat(String format) {
-        this.format = format;
     }
 
     public PostContent getTitle() {
@@ -147,22 +90,6 @@ public class Post {
         this.content = content;
     }
 
-    public List<Integer> getCategories() {
-        return categories;
-    }
-
-    public void setCategories(List<Integer> categories) {
-        this.categories = categories;
-    }
-
-    public List<Integer> getTags() {
-        return tags;
-    }
-
-    public void setTags(List<Integer> tags) {
-        this.tags = tags;
-    }
-
     public String getWps_subtitle() {
         return wps_subtitle;
     }
@@ -176,35 +103,34 @@ public class Post {
             "id=" + id +
             ", author=" + author +
             ", date='" + date + '\'' +
-            ", date_gmt='" + date_gmt + '\'' +
             ", modified='" + modified + '\'' +
-            ", modified_gmt='" + modified_gmt + '\'' +
-            ", slug='" + slug + '\'' +
-            ", status='" + status + '\'' +
             ", link='" + link + '\'' +
-            ", comment_status='" + comment_status + '\'' +
-            ", ping_status='" + ping_status + '\'' +
-            ", format='" + format + '\'' +
             ", title=" + title +
             ", content=" + content +
-            ", categories=" + categories +
-            ", tags=" + tags +
             '}';
     }
 
-    public Map<String, String> getGuid() {
-        return guid;
-    }
-
-    public void setGuid(Map<String, String> guid) {
-        this.guid = guid;
-    }
-
-    public List<Integer> getAuthors() {
+    public MayAuthorList getAuthors() {
         return authors;
     }
 
-    public void setAuthors(List<Integer> authors) {
+    public void setAuthors(MayAuthorList authors) {
         this.authors = authors;
+    }
+
+    public String getLayout_flexible_0_text_area() {
+        return layout_flexible_0_text_area;
+    }
+
+    public void setLayout_flexible_0_text_area(String layout_flexible_0_text_area) {
+        this.layout_flexible_0_text_area = layout_flexible_0_text_area;
+    }
+
+    public String getSubline() {
+        return subline;
+    }
+
+    public void setSubline(String subline) {
+        this.subline = subline;
     }
 }

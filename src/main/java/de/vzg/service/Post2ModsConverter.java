@@ -9,9 +9,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import javax.naming.ConfigurationException;
 
+import de.vzg.service.wordpress.model.MayAuthorList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
@@ -42,6 +44,7 @@ public class Post2ModsConverter {
     public static final String MODS_TEMPLATE_FILE = "mods_template.xml";
 
     private static final String MODS_XPATH = "/mycoreobject/metadata/def.modsContainer/modsContainer/mods:mods";
+    private static final String RECORD_INFO_XPATH = MODS_XPATH + "/mods:recordInfo";
 
     public static final String MODS_TITLE_INFO = MODS_XPATH + "/mods:titleInfo";
 
@@ -155,7 +158,7 @@ public class Post2ModsConverter {
     }
 
     private void setAuthors() {
-        final List<Integer> authors = blogPost.getAuthors();
+        final List<Integer> authors = Optional.ofNullable(blogPost.getAuthors()).orElse(new MayAuthorList()).getAuthorIds();
         final Element authorInTemplate = getElement(AUTHOR_XPATH);
 
         if (authorInTemplate != null) {
@@ -188,6 +191,9 @@ public class Post2ModsConverter {
     }
 
     private void insertAuthor(String authorName) {
+        if(authorName==null){
+            return;
+        }
         final Element modsName = new Element("name", MODS_NAMESPACE);
         modsName.setAttribute("type", "personal");
         modsName.setAttribute("type", "simple", XLINK_NAMESPACE);
@@ -249,6 +255,11 @@ public class Post2ModsConverter {
         getElement(URL_XPATH).setText(blogPost.getLink());
     }
 
+    private void setPostInfo(){
+        getElement(RECORD_INFO_XPATH + "/mods:recordIdentifier").setText(((Integer)blogPost.getId()).toString());
+        getElement(RECORD_INFO_XPATH +"/mods:recordContentSource").setText(this.blogURL);
+    }
+
     private Element getElement(final String xpath) {
         final XPathExpression<Element> xpathFac = XPathFactory.instance()
             .compile(xpath, Filters.element(), null, MODS_NAMESPACE, XLINK_NAMESPACE);
@@ -261,6 +272,7 @@ public class Post2ModsConverter {
         setAuthors();
         setParentID();
         setURL();
+        setPostInfo();
 
         return modsTemplate;
     }

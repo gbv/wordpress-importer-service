@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration monitorinterval="30" status="info" strict="true">
-  <Properties>
-    <Property name="filename">${sys:user.home}/log/wordpressimporter.log</Property>
-  </Properties>
   <Appenders>
     <Appender type="Console" name="Console">
       <Layout type="PatternLayout" pattern="%d %p [%t] %m%n" />
@@ -10,13 +7,22 @@
     <Appender type="Console" name="FLOW">
       <Layout type="PatternLayout" pattern="%C{1}.%M %m %ex%n" />
     </Appender>
-    <Appender type="File" name="File" fileName="${filename}">
-      <Layout type="PatternLayout" pattern="%d %p %C{1.} [%t] %m%n" />
-    </Appender>
+    <RollingFile name="RollingFile" fileName="${sys:user.home}/.wpimport/logs/wpimport.log"
+                 filePattern="${sys:user.home}/.wpimport/logs/$${date:yyyy-MM}/mycore-app-%d{MM-dd-yyyy}-%i.log.gz">
+      <PatternLayout>
+        <Pattern>%highlight{%d{ISO8601} %-5p %X{loginId} %c{1}: %m%n%ex}</Pattern>
+      </PatternLayout>
+      <Policies>
+        <TimeBasedTriggeringPolicy />
+        <SizeBasedTriggeringPolicy size="250 MB"/>
+      </Policies>
+    </RollingFile>
   </Appenders>
   <Loggers>
     <Root level="info">
-      <AppenderRef ref="File" />
+      <root level="info">
+        <appender-ref ref="RollingFile" />
+      </root>
       <AppenderRef ref="Console" />
       <!-- Use FLOW to trace down exact method sending the msg -->
       <!-- <AppenderRef ref="FLOW" /> -->

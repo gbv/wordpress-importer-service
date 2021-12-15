@@ -30,6 +30,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.xml.transform.Result;
@@ -40,6 +41,8 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import de.vzg.service.wordpress.model.MayAuthorList;
+import de.vzg.service.wordpress.model.PostContent;
 import org.apache.fop.apps.FOPException;
 import org.apache.fop.apps.FOUserAgent;
 import org.apache.fop.apps.FopFactory;
@@ -52,6 +55,7 @@ import org.apache.xmlgraphics.io.Resource;
 import org.apache.xmlgraphics.io.ResourceResolver;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Entities;
 import org.xml.sax.helpers.DefaultHandler;
 
 import de.vzg.service.wordpress.model.Author;
@@ -102,16 +106,25 @@ public class Post2PDFConverter {
     private String getXHtml(Post post, String blog, String license) throws IOException {
         String htmlString = getBaseHTML(post, blog);
 
-        htmlString += post.getContent().getRendered() + getLicense(license);
-        final Document document = Jsoup
-            .parse(htmlString);
+        htmlString += Optional.ofNullable(post.getContent())
+            .map(PostContent::getRendered)
+            .orElse(Optional.ofNullable(post.getLayout_flexible_0_text_area())
+                .map(s -> "<p>\n</p>" + replaceLangBBCode(s))
+                .map(s -> s.replace("\n", "<br />"))
+                .map(s -> s.replace("<strong>", "<h3>").replace("</strong>", "</h3>"))
+                .orElse("<html></html>"))
+            + getLicense(license);
+
+        final Document document = Jsoup.parse(htmlString);
         document.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
-        String html = document.html();
+        document.outputSettings().escapeMode(Entities.EscapeMode.xhtml);
 
         return "<?xml version=\"1.0\"?> \n"
-            + "<!DOCTYPE some_name [ \n"
-            + "<!ENTITY nbsp \"&#160;\"> \n"
-            + "]> " + html.replace("<html>", "<html xmlns=\"http://www.w3.org/1999/xhtml\">");
+            + document.outerHtml().replace("<html>", "<html xmlns=\"http://www.w3.org/1999/xhtml\">");
+    }
+
+    private String replaceLangBBCode(String s) {
+        return s.replaceAll("\\[:[a-zA-Z]?[a-zA-Z]?\\]", "");
     }
 
     private String getLicense(String license) {
@@ -130,7 +143,14 @@ public class Post2PDFConverter {
             htmlString += "<h2>" + post.getWps_subtitle() + "</h2>";
         }
 
-        final List<Integer> authors = post.getAuthors();
+        if (post.getSubline() != null && !post.getSubline().isEmpty()) {
+            htmlString += "<h2>" + replaceLangBBCode(post.getSubline()) + "</h2>";
+        }
+
+        final List<Integer> authors = Optional.ofNullable(post.getAuthors())
+            .orElse(new MayAuthorList())
+            .getAuthorIds();
+
         final String name = authors != null && authors.size() > 0 ? authors.stream().map(authorID -> {
             try {
                 return AuthorFetcher.fetchAuthor(blog, authorID);

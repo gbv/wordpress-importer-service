@@ -106,10 +106,11 @@ public class MCRObjectIngester {
     public static void uploadFile(String repo, String auth, String derivate, String parentObjectID, byte[] pdf,
         String fileName) throws IOException {
         final String uriString =
-            Utils.getFixedURL(repo) + OBJECT_API_PATH + "/" + parentObjectID + "/derivates/" + derivate + "/contents/";
+            Utils.getFixedURL(repo) + OBJECT_API_PATH + "/" + parentObjectID + "/derivates/" + derivate + "/contents";
         final HttpClient httpClient = HttpClientBuilder.create().build();
         final HttpPost post = new HttpPost(uriString);
         post.setHeader("Authorization", auth);
+        LogManager.getLogger().info("Sending file to {}", uriString);
 
         String md5 = DigestUtils
             .md5Hex(pdf).toUpperCase();

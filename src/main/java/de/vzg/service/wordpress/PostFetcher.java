@@ -30,6 +30,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import de.vzg.service.wordpress.model.FailSafeAuthorsDeserializer;
+import de.vzg.service.wordpress.model.MayAuthorList;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -48,6 +52,7 @@ public class PostFetcher {
 
     private static final String V2_POSTS_PATH = "wp-json/wp/v2/posts/";
 
+
     public static final String V2_POSTS_PER_PAGE = "per_page";
 
     public static final String V2_POST_COUNT = "X-WP-TotalPages";
@@ -56,11 +61,15 @@ public class PostFetcher {
 
     public static int fetchCount(String instanceURL) throws IOException {
         final HttpClient httpClient = HttpClientBuilder.create().build();
-        final String uri = Utils.getFixedURL(instanceURL) + V2_POSTS_PATH + "?" + V2_POSTS_PER_PAGE + "=100";
+        final String uri = Utils.getFixedURL(instanceURL) + getEndpoint() + "?" + V2_POSTS_PER_PAGE + "=100";
         LOGGER.debug("Fetching post count from {}", uri);
         final HttpGet get = new HttpGet(uri);
         final HttpResponse execute = httpClient.execute(get);
         return Integer.parseInt(execute.getFirstHeader(V2_POST_COUNT).getValue());
+    }
+
+    private static String getEndpoint() {
+        return V2_POSTS_PATH;
     }
 
     public static List<Post> fetch(String instanceURL) throws IOException {
@@ -88,8 +97,8 @@ public class PostFetcher {
 
             try (final InputStream is = execute.getEntity().getContent()) {
                 try (final InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-                    final List<Post> posts = Arrays.asList(new Gson().fromJson(isr, Post[].class));
-                    for(Post modifiedPost:posts){
+                    final Post[] posts = getGson().fromJson(isr, Post[].class);
+                    for (Post modifiedPost : posts) {
                         LOGGER.info("Fetching: {}", modifiedPost.getTitle().getRendered());
                         Date lm = Utils.getWPDate(modifiedPost.getModified());
                         Date published = Utils.getWPDate(modifiedPost.getDate());
@@ -107,11 +116,15 @@ public class PostFetcher {
                         }
                     }
                 } catch (ParseException e) {
-                    throw new RuntimeException("Error while parsing WP Date!",e);
+                    throw new RuntimeException("Error while parsing WP Date!", e);
                 }
             }
         }
         return postsUntil;
+    }
+
+    public static Gson getGson() {
+        return new GsonBuilder().registerTypeAdapter(MayAuthorList.class, new FailSafeAuthorsDeserializer()).create();
     }
 
     public static List<Post> fetch(String instanceURL, int page) throws IOException {
@@ -123,26 +136,26 @@ public class PostFetcher {
 
         try (final InputStream is = execute.getEntity().getContent()) {
             try (final InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-                return Arrays.asList(new Gson().fromJson(isr, Post[].class));
+                return Arrays.asList(getGson().fromJson(isr, Post[].class));
             }
         }
     }
 
     private static String buildURLForPage(String instanceURL, int page) {
-        return Utils.getFixedURL(instanceURL) + V2_POSTS_PATH + "?" + V2_POSTS_PAGE_PARAM + "=" + page + "&"
+        return Utils.getFixedURL(instanceURL) + getEndpoint() + "?" + V2_POSTS_PAGE_PARAM + "=" + page + "&"
             + V2_POSTS_PER_PAGE + "=100" + "&orderby" + "=modified";
     }
 
     public static Post fetchPost(String instanceURL, int id) throws IOException {
         final HttpClient httpClient = HttpClientBuilder.create().build();
-        final String uri = Utils.getFixedURL(instanceURL) + V2_POSTS_PATH + id;
+        final String uri = Utils.getFixedURL(instanceURL) + getEndpoint() + id;
         LOGGER.debug("Fetching : {}", uri);
         final HttpGet get = new HttpGet(uri);
         final HttpResponse execute = httpClient.execute(get);
 
         try (final InputStream is = execute.getEntity().getContent()) {
             try (final InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-                return new Gson().fromJson(isr, Post.class);
+                return getGson().fromJson(isr, Post.class);
             }
         }
     }
