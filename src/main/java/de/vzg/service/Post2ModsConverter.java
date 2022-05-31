@@ -9,7 +9,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
 
@@ -167,6 +170,12 @@ public class Post2ModsConverter {
 
         if (authors != null && authors.size() > 0) {
             authors.forEach(this::createAuthorFromAuthor);
+        } else if (blogPost.getDelegate1() != null || blogPost.getDelegate2() != null || blogPost.getDelegate3() != null) {
+            List<String> delegateAuthors = Stream.of(blogPost.getDelegate1(), blogPost.getDelegate2(), blogPost.getDelegate3())
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            
+            delegateAuthors.forEach(authorName -> insertAuthor(authorName, "spk"));
         } else {
             createAuthorFromUser(blogPost.getAuthor());
         }
@@ -175,7 +184,7 @@ public class Post2ModsConverter {
     private void createAuthorFromAuthor(Integer authorID) {
         try {
             final Author author = AuthorFetcher.fetchAuthor(blogURL, authorID);
-            insertAuthor(author.getName());
+            insertAuthor(author.getName(), "aut");
         } catch (IOException e) {
             LOGGER.error("Error while fetching Author with ID " + authorID, e);
         }
@@ -184,13 +193,13 @@ public class Post2ModsConverter {
     private void createAuthorFromUser(Integer userID) {
         try {
             final User author = UserFetcher.fetchUser(blogURL, userID);
-            insertAuthor(author.getName());
+            insertAuthor(author.getName(), "aut");
         } catch (IOException e) {
             LOGGER.error("Error while fetching User with ID " + userID, e);
         }
     }
 
-    private void insertAuthor(String authorName) {
+    private void insertAuthor(String authorName, String roleStr) {
         if(authorName==null){
             return;
         }
@@ -204,7 +213,7 @@ public class Post2ModsConverter {
         final Element roleTerm = new Element("roleTerm", MODS_NAMESPACE);
         roleTerm.setAttribute("type", "code");
         roleTerm.setAttribute("authority", "marcrelator");
-        roleTerm.setText("aut");
+        roleTerm.setText(roleStr);
         role.addContent(roleTerm);
 
         final Element displayFormElement = new Element("displayForm", MODS_NAMESPACE);

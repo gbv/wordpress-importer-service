@@ -18,8 +18,14 @@
 
 package de.vzg.service.wordpress.model;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
+import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 public class Post {
 
@@ -32,6 +38,8 @@ public class Post {
     private PostContent title, content;
 
     private String layout_flexible_0_text_area, subline;
+
+    private JsonObject acf;
 
     public int getId() {
         return id;
@@ -132,5 +140,32 @@ public class Post {
 
     public void setSubline(String subline) {
         this.subline = subline;
+    }
+
+    public String getACF(String name){
+        return Optional.ofNullable(this.getAcf())
+                .map(acf -> acf.get(name))
+                .map(JsonElement::getAsString)
+                .orElse(null);
+    }
+
+    public String getDelegate1(){
+        return getACF("1_Delegate");
+    }
+
+    public String getDelegate2(){
+        return getACF("2_Delegate");
+    }
+
+    public String getDelegate3(){
+        return getACF("3_Delegate");
+    }
+
+
+    public JsonObject getAcf() {
+        return acf;
+    }
+    public void setAcf(JsonObject acf) {
+        this.acf = acf;
     }
 }

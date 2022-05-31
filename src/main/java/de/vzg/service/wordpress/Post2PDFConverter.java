@@ -30,8 +30,10 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.transform.Result;
 import javax.xml.transform.Transformer;
@@ -148,17 +150,27 @@ public class Post2PDFConverter {
         }
 
         final List<Integer> authors = Optional.ofNullable(post.getAuthors())
-            .orElse(new MayAuthorList())
-            .getAuthorIds();
+                .orElse(new MayAuthorList())
+                .getAuthorIds();
 
-        final String name = authors != null && authors.size() > 0 ? authors.stream().map(authorID -> {
-            try {
-                return AuthorFetcher.fetchAuthor(blog, authorID);
-            } catch (IOException e) {
-                throw new RuntimeException("Error while fetching Author " + authorID, e);
-            }
-        }).map(Author::getName)
-            .collect(Collectors.joining(", ")) : UserFetcher.fetchUser(blog, post.getAuthor()).getName();
+        final String name;
+        if (authors != null && authors.size() > 0) {
+            name = authors.stream().map(authorID -> {
+                        try {
+                            return AuthorFetcher.fetchAuthor(blog, authorID);
+                        } catch (IOException e) {
+                            throw new RuntimeException("Error while fetching Author " + authorID, e);
+                        }
+                    }).map(Author::getName)
+                    .collect(Collectors.joining(", "));
+        } else if (post.getDelegate1() != null || post.getDelegate2() != null || post.getDelegate3() != null) {
+            List<String> delegateAuthors = Stream.of(post.getDelegate1(), post.getDelegate2(), post.getDelegate3())
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            name = String.join(", ", delegateAuthors);
+        } else {
+            name = UserFetcher.fetchUser(blog, post.getAuthor()).getName();
+        }
 
         htmlString += "<hr/><table border='0'><tr><td>" + name + "</td>";
         htmlString += "<td align='right'>" + post.getDate() + "</td></tr></table>";
