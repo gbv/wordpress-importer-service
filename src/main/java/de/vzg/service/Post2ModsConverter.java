@@ -162,15 +162,18 @@ public class Post2ModsConverter {
     }
 
     private void setAuthors() {
-        final List<Integer> authors = Optional.ofNullable(blogPost.getAuthors()).orElse(new MayAuthorList()).getAuthorIds();
+        final List<Integer> authorIds = Optional.ofNullable(blogPost.getAuthors()).orElse(new MayAuthorList()).getAuthorIds();
+        final List<String> authorNames = Optional.ofNullable(blogPost.getAuthors()).orElse(new MayAuthorList()).getAuthorNames();
         final Element authorInTemplate = getElement(AUTHOR_XPATH);
 
         if (authorInTemplate != null) {
             authorInTemplate.getParentElement().removeContent(authorInTemplate);
         }
 
-        if (authors != null && authors.size() > 0) {
-            authors.forEach(this::createAuthorFromAuthor);
+        if (authorIds != null && authorIds.size() > 0) {
+            authorIds.forEach(this::createAuthorFromAuthor);
+        } else if (authorNames != null && authorNames.size() > 0) {
+            authorNames.forEach(authorName -> insertAuthor(authorName, "aut"));
         } else if (blogPost.getDelegate1() != null || blogPost.getDelegate2() != null || blogPost.getDelegate3() != null) {
             List<String> delegateAuthors = Stream.of(blogPost.getDelegate1(), blogPost.getDelegate2(), blogPost.getDelegate3())
                     .filter(Objects::nonNull)

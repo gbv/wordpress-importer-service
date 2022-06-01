@@ -150,13 +150,17 @@ public class Post2PDFConverter {
             htmlString += "<h2>" + replaceLangBBCode(post.getSubline()) + "</h2>";
         }
 
-        final List<Integer> authors = Optional.ofNullable(post.getAuthors())
+        final List<Integer> authorIds = Optional.ofNullable(post.getAuthors())
                 .orElse(new MayAuthorList())
                 .getAuthorIds();
 
-        final String name;
-        if (authors != null && authors.size() > 0) {
-            name = authors.stream().map(authorID -> {
+        final List<String> authorNames = Optional.ofNullable(post.getAuthors())
+                .orElse(new MayAuthorList())
+                .getAuthorNames();
+
+        final String combinedNamesStr;
+        if (authorIds != null && authorIds.size() > 0) {
+            combinedNamesStr = authorIds.stream().map(authorID -> {
                         try {
                             return AuthorFetcher.fetchAuthor(blog, authorID);
                         } catch (IOException e) {
@@ -164,17 +168,19 @@ public class Post2PDFConverter {
                         }
                     }).map(Author::getName)
                     .collect(Collectors.joining(", "));
+        } else if (authorNames != null && authorNames.size()>0){
+            combinedNamesStr = String.join(", ", authorNames);
         } else if (post.getDelegate1() != null || post.getDelegate2() != null || post.getDelegate3() != null) {
             List<String> delegateAuthors = Stream.of(post.getDelegate1(), post.getDelegate2(), post.getDelegate3())
                     .filter(Objects::nonNull)
                     .filter(Predicate.not(String::isEmpty))
                     .collect(Collectors.toList());
-            name = String.join(", ", delegateAuthors);
+            combinedNamesStr = String.join(", ", delegateAuthors);
         } else {
-            name = UserFetcher.fetchUser(blog, post.getAuthor()).getName();
+            combinedNamesStr = UserFetcher.fetchUser(blog, post.getAuthor()).getName();
         }
 
-        htmlString += "<hr/><table border='0'><tr><td>" + name + "</td>";
+        htmlString += "<hr/><table border='0'><tr><td>" + combinedNamesStr + "</td>";
         htmlString += "<td align='right'>" + post.getDate() + "</td></tr></table>";
 
 

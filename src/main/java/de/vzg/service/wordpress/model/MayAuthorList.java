@@ -1,23 +1,32 @@
 package de.vzg.service.wordpress.model;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class MayAuthorList {
     public MayAuthorList(){
-        setAuthorIds(new ArrayList<>(0));
+        setAuthorIds(new ArrayList<>());
+        setAuthorNames(new ArrayList<>());
     }
 
-    public MayAuthorList(ArrayList<Integer> authorIds) {
-        this.authorIds = authorIds;
-    }
+    private List<Integer> authorIds;
 
-    private ArrayList<Integer> authorIds;
+    private List<String> authorNames;
 
-    public ArrayList<Integer> getAuthorIds() {
+    public List<Integer> getAuthorIds() {
         return authorIds;
     }
 
-    public void setAuthorIds(ArrayList<Integer> authorIds) {
+    public void setAuthorIds(List<Integer> authorIds) {
         this.authorIds = authorIds;
     }
+
+    public List<String> getAuthorNames() {
+        return authorNames;
+    }
+
+    public void setAuthorNames(List<String> authorNames) {
+        this.authorNames = authorNames;
+    }
+
 }
