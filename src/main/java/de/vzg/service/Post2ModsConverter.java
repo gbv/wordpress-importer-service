@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -173,6 +174,7 @@ public class Post2ModsConverter {
         } else if (blogPost.getDelegate1() != null || blogPost.getDelegate2() != null || blogPost.getDelegate3() != null) {
             List<String> delegateAuthors = Stream.of(blogPost.getDelegate1(), blogPost.getDelegate2(), blogPost.getDelegate3())
                     .filter(Objects::nonNull)
+                    .filter(Predicate.not(String::isEmpty))
                     .collect(Collectors.toList());
             
             delegateAuthors.forEach(authorName -> insertAuthor(authorName, "spk"));

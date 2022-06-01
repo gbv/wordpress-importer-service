@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -166,6 +167,7 @@ public class Post2PDFConverter {
         } else if (post.getDelegate1() != null || post.getDelegate2() != null || post.getDelegate3() != null) {
             List<String> delegateAuthors = Stream.of(post.getDelegate1(), post.getDelegate2(), post.getDelegate3())
                     .filter(Objects::nonNull)
+                    .filter(Predicate.not(String::isEmpty))
                     .collect(Collectors.toList());
             name = String.join(", ", delegateAuthors);
         } else {
