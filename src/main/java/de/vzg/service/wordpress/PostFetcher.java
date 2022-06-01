@@ -59,6 +59,11 @@ public class PostFetcher {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
+    public static void main(String[] args) throws IOException {
+        LOGGER.info(String.join(",", fetchPost("https://gpil.jura.uni-bonn.de/", 3637).getAuthors().getAuthorNames()));
+        LOGGER.info( fetchPost("https://youthdelegatesearch.org/", 3017).getDelegate1());
+    }
+
     public static int fetchCount(String instanceURL) throws IOException {
         final HttpClient httpClient = HttpClientBuilder.create().build();
         final String uri = Utils.getFixedURL(instanceURL) + getEndpoint() + "?" + V2_POSTS_PER_PAGE + "=100";

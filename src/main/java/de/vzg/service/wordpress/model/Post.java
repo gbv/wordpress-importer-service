@@ -39,7 +39,7 @@ public class Post {
 
     private String layout_flexible_0_text_area, subline;
 
-    private JsonObject acf;
+    private JsonElement acf;
 
     public int getId() {
         return id;
@@ -144,6 +144,8 @@ public class Post {
 
     public String getACF(String name){
         return Optional.ofNullable(this.getAcf())
+                .filter(JsonElement::isJsonObject)
+                .map(JsonObject.class::cast)
                 .map(acf -> acf.get(name))
                 .map(JsonElement::getAsString)
                 .orElse(null);
@@ -162,10 +164,10 @@ public class Post {
     }
 
 
-    public JsonObject getAcf() {
+    public JsonElement getAcf() {
         return acf;
     }
-    public void setAcf(JsonObject acf) {
+    public void setAcf(JsonElement acf) {
         this.acf = acf;
     }
 }

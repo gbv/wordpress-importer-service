@@ -17,7 +17,7 @@ public class FailSafeAuthorsDeserializer implements JsonDeserializer<MayAuthorLi
     public MayAuthorList deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         MayAuthorList mayAuthorList = new MayAuthorList();
 
-        if(json.isJsonObject()){
+        if(json.isJsonArray()){
             final JsonArray asJsonArray = json.getAsJsonArray();
 
             asJsonArray.forEach(el-> {
