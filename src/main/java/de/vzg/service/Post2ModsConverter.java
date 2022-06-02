@@ -9,6 +9,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -204,8 +205,22 @@ public class Post2ModsConverter {
         }
     }
 
+    public boolean isParticle(String namePart) {
+        switch (namePart.toLowerCase(Locale.ROOT).replace(".","")) {
+            case "mr":
+            case "mrs":
+            case "ms":
+            case "miss":
+            case "mx":
+            case "madam":
+            case "sir":
+                return true;
+        }
+        return false;
+    }
+
     private void insertAuthor(String authorName, String roleStr) {
-        if(authorName==null){
+        if (authorName == null) {
             return;
         }
         final Element modsName = new Element("name", MODS_NAMESPACE);
@@ -238,17 +253,23 @@ public class Post2ModsConverter {
         // only handles the form givenName familyName
         if (authorName.contains(" ")) {
             final String[] split = authorName.split(" ", 3);
-                if(split.length==3){
-                    final String foreName = split[0] + " " + split[1];
+                if(split.length==3) {
+                    final String foreName;
+                    if (isParticle(split[0])) {
+                        foreName = split[1];
+                    } else {
+                        foreName = split[0] + " " + split[1];
+                    }
                     final String sureName = split[2];
 
                     givenNameElement.setText(foreName);
                     familyNameElement.setText(sureName);
                 } else {
-                    final String foreName = split[0];
+                    if(isParticle(split[0])){
+                        final String foreName = split[0];
+                        givenNameElement.setText(foreName);
+                    }
                     final String sureName = split[1];
-
-                    givenNameElement.setText(foreName);
                     familyNameElement.setText(sureName);
                 }
             } else {

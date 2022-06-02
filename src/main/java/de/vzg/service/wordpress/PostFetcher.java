@@ -32,6 +32,7 @@ import java.util.Set;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import de.vzg.service.Post2ModsConverter;
 import de.vzg.service.wordpress.model.FailSafeAuthorsDeserializer;
 import de.vzg.service.wordpress.model.MayAuthorList;
 import org.apache.http.HttpResponse;
@@ -45,6 +46,7 @@ import com.google.gson.Gson;
 
 import de.vzg.service.Utils;
 import de.vzg.service.wordpress.model.Post;
+import org.jdom2.output.XMLOutputter;
 
 public class PostFetcher {
 
@@ -60,8 +62,9 @@ public class PostFetcher {
     private static final Logger LOGGER = LogManager.getLogger();
 
     public static void main(String[] args) throws IOException {
-        LOGGER.info(String.join(",", fetchPost("https://gpil.jura.uni-bonn.de/", 3637).getAuthors().getAuthorNames()));
-        LOGGER.info( fetchPost("https://youthdelegatesearch.org/", 3017).getDelegate1());
+        Post post = fetchPost("https://youthdelegatesearch.org/", 3175);
+
+        LOGGER.info(new XMLOutputter().outputString(new Post2ModsConverter(post, "parent", "https://youthdelegatesearch.org/", null).getMods()));
     }
 
     public static int fetchCount(String instanceURL) throws IOException {
