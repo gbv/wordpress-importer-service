@@ -92,7 +92,8 @@ public class WordpressAutoImporter implements Runnable, ServletContextListener {
                     final Document mods = new Post2ModsConverter(post,
                         config.getParentObject(),
                         config.getBlog(),
-                        config.getPostTemplate())
+                        config.getPostTemplate(),
+                        config.getLicense())
                         .getMods();
 
                     final ByteArrayOutputStream pdfDocumentStream = new ByteArrayOutputStream();

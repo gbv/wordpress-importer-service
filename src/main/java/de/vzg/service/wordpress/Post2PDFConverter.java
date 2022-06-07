@@ -44,6 +44,7 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import de.vzg.service.configuration.ImporterConfigurationLicense;
 import de.vzg.service.wordpress.model.MayAuthorList;
 import de.vzg.service.wordpress.model.PostContent;
 import org.apache.fop.apps.FOPException;
@@ -75,8 +76,8 @@ public class Post2PDFConverter {
 
     }
 
-    public void getPDF(Post post, OutputStream os, String blog, String license)
-        throws FOPException, TransformerException, IOException {
+    public void getPDF(Post post, OutputStream os, String blog, ImporterConfigurationLicense license)
+            throws FOPException, TransformerException, IOException {
         String htmlContent = getXHtml(post, blog, license);
 
         ByteArrayOutputStream result;
@@ -106,17 +107,17 @@ public class Post2PDFConverter {
         }
     }
 
-    private String getXHtml(Post post, String blog, String license) throws IOException {
+    private String getXHtml(Post post, String blog, ImporterConfigurationLicense license) throws IOException {
         String htmlString = getBaseHTML(post, blog);
 
         htmlString += Optional.ofNullable(post.getContent())
-            .map(PostContent::getRendered)
-            .orElse(Optional.ofNullable(post.getLayout_flexible_0_text_area())
-                .map(s -> "<p>\n</p>" + replaceLangBBCode(s))
-                .map(s -> s.replace("\n", "<br />"))
-                .map(s -> s.replace("<strong>", "<h3>").replace("</strong>", "</h3>"))
-                .orElse("<html></html>"))
-            + getLicense(license);
+                .map(PostContent::getRendered)
+                .orElse(Optional.ofNullable(post.getLayout_flexible_0_text_area())
+                        .map(s -> "<p>\n</p>" + replaceLangBBCode(s))
+                        .map(s -> s.replace("\n", "<br />"))
+                        .map(s -> s.replace("<strong>", "<h3>").replace("</strong>", "</h3>"))
+                        .orElse("<html></html>"))
+                + getLicense(license);
 
         final Document document = Jsoup.parse(htmlString);
         document.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
@@ -130,11 +131,14 @@ public class Post2PDFConverter {
         return s.replaceAll("\\[:[a-zA-Z]?[a-zA-Z]?\\]", "");
     }
 
-    private String getLicense(String license) {
+    private String getLicense(ImporterConfigurationLicense license) {
         if (license != null) {
-            return "<hr/><a href='https://creativecommons.org/licenses/" + license
-                + "'><img border='0' src='https://i.creativecommons.org/l/" + license
-                + "/80x15.png'></img></a>";
+            if (license.getLogoURL() != null && license.getURL() != null) {
+                return "<hr/><a href='" + license.getURL()
+                        + "'><img border='0' src='" + license.getLogoURL() + "'></img></a>";
+            } else if (license.getLabel() != null) {
+                return "<hr/><span>" + license.getLabel() + "</span>";
+            }
         }
         return "";
     }

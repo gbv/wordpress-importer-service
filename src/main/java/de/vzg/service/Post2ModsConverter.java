@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
 
+import de.vzg.service.configuration.ImporterConfigurationLicense;
 import de.vzg.service.wordpress.model.MayAuthorList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,6 +62,8 @@ public class Post2ModsConverter {
 
 
 
+    private static final String ACCESS_CONDITION_XPATH = MODS_XPATH + "/mods:accessCondition[@type='use and reproduction']";
+
     private static final String PUBLICATION_XPATH = MODS_XPATH + "/mods:originInfo[@eventType='publication']";
 
     private static final String PUBLICATION_DATE_XPATH = PUBLICATION_XPATH + "/mods:dateIssued";
@@ -91,13 +94,16 @@ public class Post2ModsConverter {
 
     private final String templateName;
 
+    private final ImporterConfigurationLicense license;
+
     private final Document modsTemplate;
 
-    public Post2ModsConverter(Post blogPost, String parentID, String blogURL, String template) {
+    public Post2ModsConverter(Post blogPost, String parentID, String blogURL, String template, ImporterConfigurationLicense license) {
         this.blogPost = blogPost;
         this.parentID = parentID;
         this.blogURL = blogURL;
         this.templateName = template;
+        this.license = license;
         modsTemplate = loadModsTemplate();
 
     }
@@ -308,8 +314,13 @@ public class Post2ModsConverter {
         setParentID();
         setURL();
         setPostInfo();
+        setLicense();
 
         return modsTemplate;
+    }
+
+    private void setLicense() {
+        getElement(ACCESS_CONDITION_XPATH).setAttribute("href", "http://www.mycore.org/classifications/mir_licenses#" + license.getClassID(), XLINK_NAMESPACE);
     }
 
 }

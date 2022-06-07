@@ -33,6 +33,8 @@ import java.util.Set;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import de.vzg.service.Post2ModsConverter;
+import de.vzg.service.configuration.ImporterConfigurationLicense;
+import de.vzg.service.wordpress.model.BackwardsCompatibleLicenseDeserializer;
 import de.vzg.service.wordpress.model.FailSafeAuthorsDeserializer;
 import de.vzg.service.wordpress.model.MayAuthorList;
 import org.apache.http.HttpResponse;
@@ -64,7 +66,11 @@ public class PostFetcher {
     public static void main(String[] args) throws IOException {
         Post post = fetchPost("https://youthdelegatesearch.org/", 3175);
 
-        LOGGER.info(new XMLOutputter().outputString(new Post2ModsConverter(post, "parent", "https://youthdelegatesearch.org/", null).getMods()));
+        LOGGER.info(new XMLOutputter().outputString(new Post2ModsConverter(post, "parent",
+                "https://youthdelegatesearch.org/",
+                null,
+                new ImporterConfigurationLicense("https://licensebuttons.net/l/publicdomain/80x15.png",
+                        "https://creativecommons.org/publicdomain/mark/1.0/", "cc_mark_1.0")).getMods()));
     }
 
     public static int fetchCount(String instanceURL) throws IOException {
@@ -132,7 +138,10 @@ public class PostFetcher {
     }
 
     public static Gson getGson() {
-        return new GsonBuilder().registerTypeAdapter(MayAuthorList.class, new FailSafeAuthorsDeserializer()).create();
+        return new GsonBuilder()
+                .registerTypeAdapter(MayAuthorList.class, new FailSafeAuthorsDeserializer())
+                .registerTypeAdapter(ImporterConfigurationLicense.class, new BackwardsCompatibleLicenseDeserializer())
+                .create();
     }
 
     public static List<Post> fetch(String instanceURL, int page) throws IOException {

@@ -78,7 +78,9 @@ public class ServiceResource {
         final LocalPostStore postStore = LocalPostStore.getInstance(config.getBlog());
         final Post post = postStore.getPost(postID);
         final Document mods = new Post2ModsConverter(post, config.getParentObject(), config.getBlog(),
-            config.getPostTemplate()).getMods();
+            config.getPostTemplate(),
+            config.getLicense()
+        ).getMods();
 
         return new XMLOutputter().outputString(mods);
     }

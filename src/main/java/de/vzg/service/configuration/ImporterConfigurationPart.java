@@ -37,7 +37,7 @@ public class ImporterConfigurationPart {
      */
     private String postTemplate;
 
-    private String license;
+    private ImporterConfigurationLicense license;
 
     public String getBlog() {
         return blog;
@@ -71,11 +71,11 @@ public class ImporterConfigurationPart {
         this.postTemplate = postTemplate;
     }
 
-    public String getLicense() {
+    public ImporterConfigurationLicense getLicense() {
         return license;
     }
 
-    public void setLicense(String license) {
+    public void setLicense(ImporterConfigurationLicense license) {
         this.license = license;
     }
 
