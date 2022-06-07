@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import de.vzg.service.wordpress.model.BackwardsCompatibleLicenseDeserializer;
 
 public class ImporterConfiguration {
 
@@ -55,7 +57,9 @@ public class ImporterConfiguration {
 
                 try (InputStream is = Files.newInputStream(wpConfigFile)) {
                     try (Reader reader = new InputStreamReader(is)) {
-                        final ImporterConfiguration config = new Gson().fromJson(reader, ImporterConfiguration.class);
+                        GsonBuilder gson = new GsonBuilder();
+                        final ImporterConfiguration config = gson.registerTypeAdapter(ImporterConfigurationLicense.class,
+                                new BackwardsCompatibleLicenseDeserializer()).create().fromJson(reader, ImporterConfiguration.class);
                         return config;
                     }
                 }

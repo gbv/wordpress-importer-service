@@ -140,7 +140,6 @@ public class PostFetcher {
     public static Gson getGson() {
         return new GsonBuilder()
                 .registerTypeAdapter(MayAuthorList.class, new FailSafeAuthorsDeserializer())
-                .registerTypeAdapter(ImporterConfigurationLicense.class, new BackwardsCompatibleLicenseDeserializer())
                 .create();
     }
 
