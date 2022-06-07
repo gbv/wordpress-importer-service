@@ -23,7 +23,27 @@ public class BackwardsCompatibleLicenseDeserializer implements JsonDeserializer<
             license.setClassID(licenseStr);
             license.setLogoURL("https://i.creativecommons.org/l/" + licenseStr + "/80x15.png");
             license.setURL("https://creativecommons.org/licenses/" + licenseStr);
-            license.setClassID(licenseStr);
+
+            switch (licenseStr) {
+                case "by-nc-nd/4.0":
+                    license.setClassID("cc_by-nc-nd_4.0");
+                    break;
+                case "by-nc-sa/4.0":
+                    license.setClassID("cc_by-nc-sa_4.0");
+                    break;
+                case "by-nc/4.0":
+                    license.setClassID("cc_by-nc_4.0");
+                    break;
+                case "by-nd/4.0":
+                    license.setClassID("cc_by-nd_4.0");
+                    break;
+                case "by-sa/4.0":
+                    license.setClassID("cc_by-sa_4.0");
+                    break;
+                case "by/4.0":
+                    license.setClassID("cc_by_4.0");
+                    break;
+            }
         } else if (jsonElement.isJsonObject()) {
             JsonObject licenseObj = jsonElement.getAsJsonObject();
 

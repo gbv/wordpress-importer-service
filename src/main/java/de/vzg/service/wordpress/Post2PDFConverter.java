@@ -136,6 +136,8 @@ public class Post2PDFConverter {
             if (license.getLogoURL() != null && license.getURL() != null) {
                 return "<hr/><a href='" + license.getURL()
                         + "'><img border='0' src='" + license.getLogoURL() + "'></img></a>";
+            } else if (license.getLabel() != null && license.getURL() != null) {
+                return "<hr/><a href='" + license.getURL() + "'>" + license.getLabel() + "</a>";
             } else if (license.getLabel() != null) {
                 return "<hr/><span>" + license.getLabel() + "</span>";
             }
