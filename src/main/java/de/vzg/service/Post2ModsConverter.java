@@ -7,6 +7,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -178,15 +180,17 @@ public class Post2ModsConverter {
         }
 
         if (authorIds != null && authorIds.size() > 0) {
+            Collections.reverse(authorIds);
             authorIds.forEach(this::createAuthorFromAuthor);
         } else if (authorNames != null && authorNames.size() > 0) {
+            Collections.reverse(authorNames);
             authorNames.forEach(authorName -> insertAuthor(authorName, "aut"));
         } else if (blogPost.getDelegate1() != null || blogPost.getDelegate2() != null || blogPost.getDelegate3() != null) {
             List<String> delegateAuthors = Stream.of(blogPost.getDelegate1(), blogPost.getDelegate2(), blogPost.getDelegate3())
                     .filter(Objects::nonNull)
                     .filter(Predicate.not(String::isEmpty))
                     .collect(Collectors.toList());
-            
+            Collections.reverse(delegateAuthors);
             delegateAuthors.forEach(authorName -> insertAuthor(authorName, "spk"));
         } else {
             createAuthorFromUser(blogPost.getAuthor());

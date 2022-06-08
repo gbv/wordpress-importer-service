@@ -48,6 +48,7 @@ import com.google.gson.Gson;
 
 import de.vzg.service.Utils;
 import de.vzg.service.wordpress.model.Post;
+import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
 public class PostFetcher {
@@ -64,10 +65,11 @@ public class PostFetcher {
     private static final Logger LOGGER = LogManager.getLogger();
 
     public static void main(String[] args) throws IOException {
-        Post post = fetchPost("https://youthdelegatesearch.org/", 3175);
+        // post = fetchPost("https://youthdelegatesearch.org/", 3175);
+        Post post = fetchPost("https://gpil.jura.uni-bonn.de/", 3583);
 
-        LOGGER.info(new XMLOutputter().outputString(new Post2ModsConverter(post, "parent",
-                "https://youthdelegatesearch.org/",
+        LOGGER.info(new XMLOutputter(Format.getPrettyFormat()).outputString(new Post2ModsConverter(post, "parent",
+                "https://gpil.jura.uni-bonn.de/",
                 null,
                 new ImporterConfigurationLicense("https://licensebuttons.net/l/publicdomain/80x15.png",
                         "https://creativecommons.org/publicdomain/mark/1.0/", "cc_mark_1.0")).getMods()));
