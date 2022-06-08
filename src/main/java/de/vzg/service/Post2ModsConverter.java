@@ -275,7 +275,7 @@ public class Post2ModsConverter {
                     givenNameElement.setText(foreName);
                     familyNameElement.setText(sureName);
                 } else {
-                    if(isParticle(split[0])){
+                    if(!isParticle(split[0])){
                         final String foreName = split[0];
                         givenNameElement.setText(foreName);
                     }
