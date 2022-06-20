@@ -1,27 +1,14 @@
 package de.vzg.service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import javax.naming.ConfigurationException;
-
+import de.vzg.service.configuration.ImporterConfiguration;
 import de.vzg.service.configuration.ImporterConfigurationLicense;
+import de.vzg.service.mycore.MODSUtil;
+import de.vzg.service.wordpress.AuthorFetcher;
+import de.vzg.service.wordpress.UserFetcher;
+import de.vzg.service.wordpress.model.Author;
 import de.vzg.service.wordpress.model.MayAuthorList;
+import de.vzg.service.wordpress.model.Post;
+import de.vzg.service.wordpress.model.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
@@ -33,15 +20,26 @@ import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
 import org.jsoup.Jsoup;
 
-import de.vzg.service.configuration.ImporterConfiguration;
-import de.vzg.service.mycore.MODSUtil;
+import javax.naming.ConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static de.vzg.service.mycore.MODSUtil.MODS_NAMESPACE;
 import static de.vzg.service.mycore.MODSUtil.XLINK_NAMESPACE;
-import de.vzg.service.wordpress.AuthorFetcher;
-import de.vzg.service.wordpress.UserFetcher;
-import de.vzg.service.wordpress.model.Author;
-import de.vzg.service.wordpress.model.Post;
-import de.vzg.service.wordpress.model.User;
 
 /**
  * Reads a template with a name from {@link ImporterConfiguration#getConfigPath()} and sets some values with xpath from
@@ -319,8 +317,60 @@ public class Post2ModsConverter {
         setURL();
         setPostInfo();
         setLicense();
+        setCustomValues();
 
         return modsTemplate;
+    }
+
+    private void setCustomValues() {
+        // INTR2DOK-44
+        if (this.blogURL.contains("youthdelegatesearch")) {
+            Element relatedItem = getElement(RELATED_PARENT_XPATH);
+
+            if (relatedItem != null) {
+                Element modsPartSeries = new Element("part", MODS_NAMESPACE);
+                relatedItem.addContent(modsPartSeries);
+
+                Element modsDetailSeries = new Element("detail", MODS_NAMESPACE);
+                modsDetailSeries.setAttribute("type", "volume");
+                modsPartSeries.addContent(modsDetailSeries);
+
+                Element modsNumber = new Element("number", MODS_NAMESPACE);
+                modsNumber.setText(this.blogPost.getDate().split("-")[0]);
+                modsDetailSeries.addContent(modsNumber);
+            }
+
+            Element relatedItemOriginal = new Element("relatedItem", MODS_NAMESPACE);
+            relatedItemOriginal.setAttribute("type", "original");
+            relatedItemOriginal.setAttribute("type", "simple", XLINK_NAMESPACE);
+            getElement(MODS_XPATH).addContent(relatedItemOriginal);
+
+            Element titleInfo = new Element("titleInfo", MODS_NAMESPACE);
+            titleInfo.setAttribute("type", "simple", XLINK_NAMESPACE);
+            relatedItemOriginal.addContent(titleInfo);
+
+            Element title = new Element("title", MODS_NAMESPACE);
+            String pagesStr = this.blogPost.getAcf().getAsJsonObject().get("pages").getAsString();
+            title.setText("UN Doc. " + this.blogPost.getAcf().getAsJsonObject().get("undoc").getAsString());
+            titleInfo.addContent(title);
+
+            Element modsPartOriginal = new Element("part", MODS_NAMESPACE);
+            relatedItemOriginal.addContent(modsPartOriginal);
+
+            Element extent = new Element("extent", MODS_NAMESPACE);
+            extent.setAttribute("unit", "page");
+            modsPartOriginal.addContent(extent);
+            String[] pages = pagesStr.split("-", 2);
+            if (pages.length > 1) {
+                String start = pages[0];
+                String end = pages[1];
+                extent.addContent(new Element("start", MODS_NAMESPACE).setText(start));
+                extent.addContent(new Element("end", MODS_NAMESPACE).setText(end));
+            } else {
+                extent.addContent(new Element("start", MODS_NAMESPACE).setText(pages[0]));
+            }
+
+        }
     }
 
     private void setLicense() {

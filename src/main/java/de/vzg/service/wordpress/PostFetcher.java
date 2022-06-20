@@ -65,11 +65,17 @@ public class PostFetcher {
     private static final Logger LOGGER = LogManager.getLogger();
 
     public static void main(String[] args) throws IOException {
-        // post = fetchPost("https://youthdelegatesearch.org/", 3175);
-        Post post = fetchPost("https://gpil.jura.uni-bonn.de/", 3583);
+        Post post = fetchPost("https://youthdelegatesearch.org/", 3175);
+        //Post post = fetchPost("https://gpil.jura.uni-bonn.de/", 3583);
+
+        /*LOGGER.info(new XMLOutputter(Format.getPrettyFormat()).outputString(new Post2ModsConverter(post, "parent",
+                "https://gpil.jura.uni-bonn.de/",
+                null,
+                new ImporterConfigurationLicense("https://licensebuttons.net/l/publicdomain/80x15.png",
+                        "https://creativecommons.org/publicdomain/mark/1.0/", "cc_mark_1.0")).getMods()));*/
 
         LOGGER.info(new XMLOutputter(Format.getPrettyFormat()).outputString(new Post2ModsConverter(post, "parent",
-                "https://gpil.jura.uni-bonn.de/",
+                "https://youthdelegatesearch.org/",
                 null,
                 new ImporterConfigurationLicense("https://licensebuttons.net/l/publicdomain/80x15.png",
                         "https://creativecommons.org/publicdomain/mark/1.0/", "cc_mark_1.0")).getMods()));
