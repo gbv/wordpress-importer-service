@@ -358,7 +358,7 @@ public class Post2ModsConverter {
             relatedItemOriginal.addContent(modsPartOriginal);
 
             Element extent = new Element("extent", MODS_NAMESPACE);
-            extent.setAttribute("unit", "page");
+            extent.setAttribute("unit", "pages");
             modsPartOriginal.addContent(extent);
             String[] pages = pagesStr.split("-", 2);
             if (pages.length > 1) {
