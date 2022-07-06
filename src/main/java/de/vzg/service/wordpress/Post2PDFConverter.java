@@ -187,7 +187,16 @@ public class Post2PDFConverter {
         }
 
         htmlString += "<hr/><table border='0'><tr><td>" + combinedNamesStr + "</td>";
-        htmlString += "<td align='right'>" + post.getDate() + "</td></tr></table>";
+        htmlString += "<td align='right'>" + post.getDate() + "</td></tr>";
+
+        if (blog.contains("youthdelegatesearch")) {
+            String year = post.getDate().split("-")[0];
+            String undoc = "UN Doc. " + post.getAcf().getAsJsonObject().get("undoc").getAsString();
+            String pagesStr = post.getAcf().getAsJsonObject().get("pages").getAsString();
+            htmlString += "<tr><td>Original: "+ undoc + ", p."+ pagesStr+"; Band:"+ year+"</td><td align='right'>UN Youth Delegate Programme</td></tr>";
+        }
+
+        htmlString += "</table>";
 
 
 
