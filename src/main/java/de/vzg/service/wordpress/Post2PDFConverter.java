@@ -194,7 +194,8 @@ public class Post2PDFConverter {
             String year = post.getDate().split("-")[0];
             String undoc = "UN Doc. " + post.getAcf().getAsJsonObject().get("undoc").getAsString();
             String pagesStr = post.getAcf().getAsJsonObject().get("pages").getAsString();
-            htmlString += "<p>UN Youth Delegate Programme, Original: "+ undoc + ", p."+ pagesStr+"; Band:"+ year+"</p>";
+            htmlString += "<p><b>UN Youth Delegate Programme</b></p>";
+            htmlString += "<p>Original: " + undoc + ", p. " + pagesStr + "; Band:" + year + "</p>";
         }
 
         return htmlString;
