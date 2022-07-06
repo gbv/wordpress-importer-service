@@ -182,7 +182,7 @@ public class Post2ModsConverter {
             authorIds.forEach(this::createAuthorFromAuthor);
         } else if (authorNames != null && authorNames.size() > 0) {
             Collections.reverse(authorNames);
-            authorNames.forEach(authorName -> insertAuthor(authorName, "aut"));
+            authorNames.forEach(authorName -> insertAuthor(authorName, "aut", true));
         } else if (blogPost.getDelegate1() != null || blogPost.getDelegate2() != null || blogPost.getDelegate3() != null) {
             List<String> delegateAuthors = Stream.of(blogPost.getDelegate1(), blogPost.getDelegate2(), blogPost.getDelegate3())
                     .filter(Objects::nonNull)
@@ -228,6 +228,10 @@ public class Post2ModsConverter {
     }
 
     private void insertAuthor(String authorName, String roleStr) {
+        insertAuthor(authorName, roleStr, false);
+    }
+
+    private void insertAuthor(String authorName, String roleStr, boolean generateDisplayForm) {
         if (authorName == null) {
             return;
         }
@@ -258,26 +262,28 @@ public class Post2ModsConverter {
         final Element modsElement = getElement(MODS_XPATH);
         modsElement.addContent(modsElement.indexOf(getElement(MODS_TITLE_INFO)) + 1, modsName);
 
+        String foreName = null;
+        String sureName = null;
+
         // only handles the form givenName familyName
         if (authorName.contains(" ")) {
             final String[] split = authorName.split(" ", 3);
                 if(split.length==3) {
-                    final String foreName;
                     if (isParticle(split[0])) {
                         foreName = split[1];
                     } else {
                         foreName = split[0] + " " + split[1];
                     }
-                    final String sureName = split[2];
+                    sureName = split[2];
 
                     givenNameElement.setText(foreName);
                     familyNameElement.setText(sureName);
                 } else {
                     if(!isParticle(split[0])){
-                        final String foreName = split[0];
+                        foreName = split[0];
                         givenNameElement.setText(foreName);
                     }
-                    final String sureName = split[1];
+                    sureName = split[1];
                     familyNameElement.setText(sureName);
                 }
             } else {
@@ -285,7 +291,11 @@ public class Post2ModsConverter {
                 familyNameElement.getParent().removeContent(familyNameElement);
             }
 
-        displayFormElement.setText(authorName);
+        if(generateDisplayForm){
+            displayFormElement.setText(Stream.of(sureName, foreName).filter(Objects::nonNull).collect(Collectors.joining(", ")));
+        } else {
+            displayFormElement.setText(authorName);
+        }
 
     }
 
