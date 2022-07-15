@@ -198,7 +198,7 @@ public class Post2ModsConverter {
     private void createAuthorFromAuthor(Integer authorID) {
         try {
             final Author author = AuthorFetcher.fetchAuthor(blogURL, authorID);
-            insertAuthor(author.getName(), "aut");
+            insertAuthor(author.getName(), "aut", true);
         } catch (IOException e) {
             LOGGER.error("Error while fetching Author with ID " + authorID, e);
         }
@@ -207,7 +207,7 @@ public class Post2ModsConverter {
     private void createAuthorFromUser(Integer userID) {
         try {
             final User author = UserFetcher.fetchUser(blogURL, userID);
-            insertAuthor(author.getName(), "aut");
+            insertAuthor(author.getName(), "aut", true);
         } catch (IOException e) {
             LOGGER.error("Error while fetching User with ID " + userID, e);
         }
