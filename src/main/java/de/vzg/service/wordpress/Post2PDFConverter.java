@@ -29,7 +29,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -187,15 +190,22 @@ public class Post2PDFConverter {
         }
 
         htmlString += "<hr/><table border='0'><tr><td>" + combinedNamesStr + "</td>";
-        htmlString += "<td align='right'>" + post.getDate() + "</td></tr>";
+        String dateString = post.getDate();
+        if (!blog.contains("youthdelegatesearch")) {
+            htmlString += "<td align='right'>" + dateString + "</td></tr>";
+        } else {
+            htmlString += "<td align='right'> </td>";
+        }
         htmlString += "</table>";
 
         if (blog.contains("youthdelegatesearch")) {
-            String year = post.getDate().split("-")[0];
             String undoc = "UN Doc. " + post.getAcf().getAsJsonObject().get("undoc").getAsString();
             String pagesStr = post.getAcf().getAsJsonObject().get("pages").getAsString();
             htmlString += "<p><b>UN Youth Delegate Programme</b></p>";
-            htmlString += "<p>Original: " + undoc + ", p. " + pagesStr + "; Band:" + year + "</p>";
+            TemporalAccessor parsedDateTime = DateTimeFormatter.ISO_DATE_TIME.parse(dateString);
+            String formattedDate = DateTimeFormatter.ofPattern("d LLLL y").withLocale(Locale.ENGLISH).format(parsedDateTime);
+            htmlString += "<p>Original: " + undoc + ", " + formattedDate + ", p. " + pagesStr + "</p>";
+            htmlString += "<p>Youth Delegate Search: <a href=\"" + post.getLink() + "\">" + post.getLink() + "</a></p>";
         }
 
         return htmlString;
