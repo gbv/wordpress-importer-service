@@ -87,7 +87,8 @@ public class MCRObjectIngester {
         post.setHeader("Authorization", auth);
 
         final MultipartEntityBuilder formDataBuilder = MultipartEntityBuilder.create()
-            .addTextBody("label", "data object from " + parentObjectID);
+            .addTextBody("label", "data object from " + parentObjectID)
+            .addTextBody("classifications", "derivate_types:content");
         post.setEntity(formDataBuilder.build());
 
         final HttpResponse execute = httpClient.execute(post);
