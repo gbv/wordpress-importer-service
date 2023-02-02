@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration monitorinterval="30" status="info" strict="true">
-  <Appenders>
-    <Appender type="Console" name="Console">
-      <Layout type="PatternLayout" pattern="%d %p [%t] %m%n" />
-    </Appender>
-    <Appender type="Console" name="FLOW">
-      <Layout type="PatternLayout" pattern="%C{1}.%M %m %ex%n" />
-    </Appender>
+<configuration status="OFF">
+  <appenders>
     <RollingFile name="RollingFile" fileName="${sys:user.home}/.wpimport/logs/wpimport.log"
                  filePattern="${sys:user.home}/.wpimport/logs/$${date:yyyy-MM}/mycore-app-%d{MM-dd-yyyy}-%i.log.gz">
       <PatternLayout>
@@ -17,17 +11,10 @@
         <SizeBasedTriggeringPolicy size="250 MB"/>
       </Policies>
     </RollingFile>
-  </Appenders>
-  <Loggers>
-    <Root level="info">
-      <root level="info">
-        <appender-ref ref="RollingFile" />
-      </root>
-      <AppenderRef ref="Console" />
-      <!-- Use FLOW to trace down exact method sending the msg -->
-      <!-- <AppenderRef ref="FLOW" /> -->
-    </Root>
-    <logger name="org.apache.fop" level="error" />
-    <logger name="de.vzg.service.wordpress.Post2PDFConverter" level="error" />
-  </Loggers>
-</Configuration>
+  </appenders>
+  <loggers>
+    <root level="info">
+      <appender-ref ref="RollingFile" />
+    </root>
+  </loggers>
+</configuration>
