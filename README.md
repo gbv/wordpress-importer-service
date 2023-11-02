@@ -18,7 +18,16 @@ The configuration should be present in the `.wpimport/` directory of the executi
       "blog": "https://verfassungsblog.de/",
       "repository": "http://localhost:8291/mir/",
       "parentObject": "mir_mods_00000001",
-      "postTemplate": "verfassungsblog.template.xml"
+      "postTemplate": "verfassungsblog.template.xml",
+      "username": "admin",
+      "password": "password",
+      "license": "http://creativecommons.org/licenses/by/4.0/", 
+      "license": {
+        "label": "Public Domain Mark 1.0",
+        "logoURL": "https://licensebuttons.net/l/publicdomain/80x15.png",
+        "URL": "https://creativecommons.org/publicdomain/mark/1.0/",
+        "classID": "cc_mark_1.0"
+      }
     }
   }
 }
@@ -28,7 +37,13 @@ The configuration should be present in the `.wpimport/` directory of the executi
 * **repository** - the url to the mycore instance
 * **parentObject** - the id of the object to which all blogpost will be appended
 * **postTemplate** - a file name or path relative to the `.wpimport` folder which contains a mods.xml template. 
-Values of the post will be inserted using xpaths ( See also `de.vzg.service.Post2ModsConverter`)
+* **username** - the username for the mycore restapi
+* **password** - the password for the mycore restapi
+* **license** - the license which will be used for all posts. Can be a string or an object with the following properties:
+  * **label** - the label of the license
+  * **logoURL** - the url to the license logo
+  * **URL** - the url to the license
+  * **classID** - the class id of the license (mods:classificiation/@authority=)
 
 ### Database
 

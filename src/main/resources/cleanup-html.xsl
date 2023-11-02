@@ -2,7 +2,7 @@
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:html="http://www.w3.org/1999/xhtml"
                 xmlns:xalan="http://xml.apache.org/xalan"
-                xmlns:util="xalan://de.vzg.service.Utils"
+                xmlns:util="xalan://de.vzg.wis.Utils"
                 exclude-result-prefixes="xalan util">
 
   <xsl:output method="xml" />
