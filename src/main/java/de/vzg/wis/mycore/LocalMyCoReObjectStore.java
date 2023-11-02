@@ -211,10 +211,14 @@ public class LocalMyCoReObjectStore {
 
             final HttpResponse execute = httpClient.execute(get);
 
-            try (final InputStream is = execute.getEntity().getContent()) {
-                SAXBuilder saxBuilder = new SAXBuilder();
-                return saxBuilder.build(is);
+            if (execute.getStatusLine().getStatusCode() == 200) {
+                try (final InputStream is = execute.getEntity().getContent()) {
+                    SAXBuilder saxBuilder = new SAXBuilder();
+                    return saxBuilder.build(is);
+                }
             }
+            throw new RuntimeException("Could not fetch " + uri + " " + execute.getStatusLine().getStatusCode()
+                    + " " + execute.getStatusLine().getReasonPhrase());
         }
     }
 
