@@ -194,7 +194,7 @@ public class LocalMyCoReObjectStore {
             if (username == null || password == null) {
                 LOGGER.debug("No username or password given");
             } else if (token == null || tokenExpiration == null
-                || tokenExpiration.plus(Duration.of(29, ChronoUnit.MINUTES)).isBefore(Instant.now())) {
+                || tokenExpiration.plus(Duration.of(9, ChronoUnit.MINUTES)).isBefore(Instant.now())) {
                 LOGGER.debug("Fetching new token");
                 token = MCRRestLogin.getLoginToken(repo, username, password);
                 tokenExpiration = Instant.now();
