@@ -3,42 +3,57 @@ package de.vzg.wis;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.xml.transform.TransformerException;
 
 import de.vzg.wis.configuration.ImporterConfiguration;
 import de.vzg.wis.configuration.ImporterConfigurationPart;
-import de.vzg.wis.mycore.LocalMyCoReObjectStore;
 import de.vzg.wis.mycore.MCRObjectIngester;
 import de.vzg.wis.mycore.MCRRestLogin;
-import de.vzg.wis.wordpress.LocalPostStore;
+import de.vzg.wis.mycore.MyCoReObjectInfoUpdater;
+import de.vzg.wis.wordpress.BlogPostInfoUpdater;
 import de.vzg.wis.wordpress.Post2PDFConverter;
+import de.vzg.wis.wordpress.PostFetcher;
 import de.vzg.wis.wordpress.model.Post;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
-import org.jdom2.JDOMException;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
 
-import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@WebListener
-public class WordpressAutoImporter implements Runnable, ServletContextListener {
+
+@Service
+public class WordpressAutoImporter implements Runnable {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    private static ScheduledThreadPoolExecutor EXECUTOR;
+    @Autowired
+    private ArticleDetectorService articleDetectorService;
+
+    @Autowired
+    private BlogPostInfoUpdater postInfoUpdater;
+
+    @Autowired
+    private MyCoReObjectInfoUpdater objectInfoUpdater;
+
+    @Autowired
+    private PostFetcher postFetcher;
+
+    @Autowired
+    private MCRObjectIngester objectIngester;
+
 
     @Override
     public void run() {
@@ -56,14 +71,16 @@ public class WordpressAutoImporter implements Runnable, ServletContextListener {
                 final ImporterConfigurationPart config = configurationPartMap.get(configurationName);
                 LOGGER.info("running import for configuration {}", configurationName);
 
-                LocalMyCoReObjectStore.getInstance(config.getRepository()).update(true, config.getUsername(),
-                    config.getPassword());
-                final WordpressMyCoReCompare wordpressMyCoReCompare = new WordpressMyCoReCompare(config);
 
-                final WordpressMyCoReComparingResult compare;
+                objectInfoUpdater.updateMyCoReObjectInfo(config.getRepository(), config.getUsername(),
+                        config.getPassword(), config.getParentObject());
+                postInfoUpdater.updateBlogPostInfo(config.getBlog());
+
+                WordpressMyCoReComparingResult compare;
+
                 try {
-                    compare = wordpressMyCoReCompare.compare();
-                } catch (IOException | JDOMException e) {
+                    compare = articleDetectorService.getComparingResult(config.getBlog(), config.getParentObject());
+                } catch (Throwable e) {
                     LOGGER.error("Error while comparing posts for configuration: " + configurationName, e);
                     LOGGER.info("Continue with next configuration!");
                     continue;
@@ -85,8 +102,8 @@ public class WordpressAutoImporter implements Runnable, ServletContextListener {
                         continue;
                     }
 
-                    final LocalPostStore postStore = LocalPostStore.getInstance(config.getBlog());
-                    final Post post = postStore.getPost(postInfo.getId());
+                   Post post = postFetcher.fetchPost(config.getBlog(), postInfo.getId());
+
                     final Document mods = new Post2ModsConverter(post,
                         config.getParentObject(),
                         config.getBlog(),
@@ -107,7 +124,7 @@ public class WordpressAutoImporter implements Runnable, ServletContextListener {
 
                     final String objectID;
                     try {
-                        objectID = MCRObjectIngester.ingestObject(config.getRepository(), loginToken, mods);
+                        objectID = objectIngester.ingestObject(config.getRepository(), loginToken, mods);
                     } catch (IOException e) {
                         final String modsAsString = new XMLOutputter(Format.getPrettyFormat()).outputString(mods);
                         LOGGER.error("Error while ingesting mods: " + modsAsString + " \n to " + config.getRepository(), e);
@@ -117,8 +134,7 @@ public class WordpressAutoImporter implements Runnable, ServletContextListener {
                     final String derivateID;
                     try {
 
-                        derivateID = MCRObjectIngester
-                            .createDerivate(config.getRepository(),
+                        derivateID = objectIngester.createDerivate(config.getRepository(),
                                 loginToken,
                                 objectID);
                     } catch (IOException e) {
@@ -128,7 +144,7 @@ public class WordpressAutoImporter implements Runnable, ServletContextListener {
                     }
 
                     try {
-                        MCRObjectIngester.uploadFile(config.getRepository(),
+                        objectIngester.uploadFile(config.getRepository(),
                             loginToken,
                             derivateID,
                             objectID,
@@ -139,32 +155,14 @@ public class WordpressAutoImporter implements Runnable, ServletContextListener {
                         LOGGER.info("Continue with next post!");
                     }
 
-                    LocalMyCoReObjectStore.getInstance(config.getRepository()).update(true, config.getUsername(),
-                        config.getPassword());
+                    objectInfoUpdater.updateMyCoReObject(config.getRepository(), config.getUsername(),
+                            config.getPassword(), objectID, null);
                 }
             }
-
         } catch (Throwable e) {
             LOGGER.error("Error while running autoimporter!", e);
         }
 
-
-        try {
-           HashSet<String> repos = new HashSet<>();
-           HashSet<String> blogs = new HashSet<>();
-            for (final String configurationName : configs) {
-                final ImporterConfigurationPart config = configurationPartMap.get(configurationName);
-                String repository = config.getRepository();
-                String blog = config.getBlog();
-                repos.add(repository);
-                blogs.add(blog);
-            }
-            blogs.stream().map(LocalPostStore::getInstance).forEach(LocalPostStore::saveToFile);
-            repos.stream().map(LocalMyCoReObjectStore::getInstance).forEach(LocalMyCoReObjectStore::saveToFile);
-        } catch (Throwable e) {
-            LOGGER.error("Error while storing DBs!", e);
-
-        }
     }
 
 

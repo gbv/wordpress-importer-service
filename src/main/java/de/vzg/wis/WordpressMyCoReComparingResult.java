@@ -1,5 +1,6 @@
 package de.vzg.wis;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,7 +15,7 @@ public class WordpressMyCoReComparingResult {
     private Map<String, String> mycoreIDValidationMap;
 
     public WordpressMyCoReComparingResult() {
-        this.notImportedPosts = new LinkedList<>();
+        this.notImportedPosts = new ArrayList<>();
         this.mycoreIDPostMap = new HashMap<>();
         this.mycoreIDValidationMap=new HashMap<>();
     }

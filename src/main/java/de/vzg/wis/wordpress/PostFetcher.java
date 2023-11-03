@@ -23,6 +23,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -47,9 +49,10 @@ import org.jdom2.output.XMLOutputter;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.springframework.stereotype.Service;
 
 
-
+@Service
 public class PostFetcher {
 
     public static final String V2_POSTS_PAGE_PARAM = "page";
@@ -64,7 +67,7 @@ public class PostFetcher {
     private static final Logger LOGGER = LogManager.getLogger();
 
 
-    public static int fetchCount(String instanceURL) throws IOException {
+    public int fetchCount(String instanceURL) throws IOException {
         final HttpClient httpClient = HttpClientBuilder.create().build();
         final String uri = Utils.getFixedURL(instanceURL) + getEndpoint() + "?" + V2_POSTS_PER_PAGE + "=100";
         LOGGER.debug("Fetching post count from {}", uri);
@@ -73,11 +76,11 @@ public class PostFetcher {
         return Integer.parseInt(execute.getFirstHeader(V2_POST_COUNT).getValue());
     }
 
-    private static String getEndpoint() {
+    private String getEndpoint() {
         return V2_POSTS_PATH;
     }
 
-    public static List<Post> fetch(String instanceURL) throws IOException {
+    public List<Post> fetch(String instanceURL) throws IOException {
         LOGGER.debug("Fetching all posts from {}", instanceURL);
         final int count = fetchCount(instanceURL);
         ArrayList<Post> allPosts = new ArrayList<>(count);
@@ -87,54 +90,54 @@ public class PostFetcher {
         return allPosts;
     }
 
-    public static Set<Post> fetchUntil(String instanceURL, Date until) throws IOException {
+    public Set<Post> fetchUntil(String instanceURL, OffsetDateTime until) throws IOException {
         final HttpClient httpClient = HttpClientBuilder.create().build();
         int pageCount = 999;
-        Date lastChanged = null;
+        OffsetDateTime lastChanged = null;
         Set<Post> postsUntil = new HashSet<Post>();
-        for (int i = 1; i <= pageCount && (lastChanged == null || lastChanged.getTime() >= until.getTime()); i++) {
+        for (int i = 1; i <= pageCount && (lastChanged == null || lastChanged.isAfter(until)); i++) {
+            LOGGER.info("Last changed: {}", lastChanged);
+
             final String uri = buildURLForPage(instanceURL, i);
-            LOGGER.debug("Fetching : {}", uri);
+            LOGGER.info("Fetching : {}", uri);
 
             final HttpGet get = new HttpGet(uri);
             final HttpResponse execute = httpClient.execute(get);
             pageCount = Integer.parseInt(execute.getFirstHeader(V2_POST_COUNT).getValue());
-
             try (final InputStream is = execute.getEntity().getContent()) {
                 try (final InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
                     final Post[] posts = getGson().fromJson(isr, Post[].class);
                     for (Post modifiedPost : posts) {
-                        LOGGER.info("Fetching: {}", modifiedPost.getTitle().getRendered());
-                        Date lm = Utils.getWPDate(modifiedPost.getModified());
-                        Date published = Utils.getWPDate(modifiedPost.getDate());
-                        Date lastChangedIntern = lm.after(published) ? lm : published;
+                        // LOGGER.info("Fetching: {}", modifiedPost.getTitle().getRendered());
+                        OffsetDateTime lm = Utils.getWPDate(modifiedPost.getModified());
+                        OffsetDateTime published = Utils.getWPDate(modifiedPost.getDate());
+                        OffsetDateTime lastChangedIntern = lm.isAfter(published) ? lm : published;
 
-                        if (lastChangedIntern.getTime() >= until.getTime()) {
+                        if (lastChangedIntern.isAfter(until)) {
                             postsUntil.add(modifiedPost);
                         } else {
-                            LOGGER.info("Post({}) is old: {} {}>={}", modifiedPost.getId(),
+                            /*LOGGER.info("Post({}) is old: {} {}>={}", modifiedPost.getId(),
                                 modifiedPost.getTitle().getRendered(),
-                                lastChangedIntern.getTime(), until.getTime());
+                                lastChangedIntern, until);*/
                         }
-                        if (lastChanged == null || lastChangedIntern.getTime() > lastChanged.getTime()) {
+
+                        if (lastChanged == null || lastChangedIntern.isBefore(lastChanged)) {
                             lastChanged = lastChangedIntern;
                         }
                     }
-                } catch (ParseException e) {
-                    throw new RuntimeException("Error while parsing WP Date!", e);
                 }
             }
         }
         return postsUntil;
     }
 
-    public static Gson getGson() {
+    public Gson getGson() {
         return new GsonBuilder()
                 .registerTypeAdapter(MayAuthorList.class, new FailSafeAuthorsDeserializer())
                 .create();
     }
 
-    public static List<Post> fetch(String instanceURL, int page) throws IOException {
+    public List<Post> fetch(String instanceURL, int page) throws IOException {
         final HttpClient httpClient = HttpClientBuilder.create().build();
         final String uri = buildURLForPage(instanceURL, page);
         LOGGER.debug("Fetching : {}", uri);
@@ -147,13 +150,12 @@ public class PostFetcher {
             }
         }
     }
-
-    private static String buildURLForPage(String instanceURL, int page) {
+    private String buildURLForPage(String instanceURL, int page) {
         return Utils.getFixedURL(instanceURL) + getEndpoint() + "?" + V2_POSTS_PAGE_PARAM + "=" + page + "&"
             + V2_POSTS_PER_PAGE + "=100" + "&orderby" + "=modified";
     }
 
-    public static Post fetchPost(String instanceURL, int id) throws IOException {
+    public Post fetchPost(String instanceURL, int id) throws IOException {
         final HttpClient httpClient = HttpClientBuilder.create().build();
         final String uri = Utils.getFixedURL(instanceURL) + getEndpoint() + id;
         LOGGER.debug("Fetching : {}", uri);

@@ -29,7 +29,7 @@ public class MCRRestLogin {
 
     public static AuthApiResponse login(String repo, String userName, String password)
         throws IOException, URISyntaxException {
-        final String uriString = Utils.getFixedURL(repo) + AUTH_API_PATH;
+        final String uriString = Utils.appendSlashIfNotPresent(repo) + AUTH_API_PATH;
         URI uri = new URI(uriString);
 
         final BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();

@@ -163,13 +163,9 @@ public class Post2ModsConverter {
         final Element element = getElement(PUBLICATION_DATE_XPATH);
         final String dateIssuedAsString = this.blogPost.getDate();
 
-        try {
-            final Date wpDate = Utils.getWPDate(dateIssuedAsString);
-            final String formattedDate = new SimpleDateFormat("yyyy-MM-dd").format(wpDate);
-            element.setText(formattedDate);
-        } catch (ParseException e) {
-            throw new RuntimeException("Could not parse date: " + dateIssuedAsString,e);
-        }
+        final Date wpDate = new Date(Utils.getWPDate(dateIssuedAsString).toInstant().toEpochMilli());
+        final String formattedDate = new SimpleDateFormat("yyyy-MM-dd").format(wpDate);
+        element.setText(formattedDate);
     }
 
     private void setAuthors() {

@@ -15,8 +15,8 @@ import de.vzg.wis.configuration.ConfigNotFoundException;
 import de.vzg.wis.configuration.ImporterConfiguration;
 import de.vzg.wis.configuration.ImporterConfigurationPart;
 
-import de.vzg.wis.mycore.LocalMyCoReObjectStore;
-import de.vzg.wis.wordpress.LocalPostStore;
+import de.vzg.wis.mycore.MyCoReObjectInfoUpdater;
+import de.vzg.wis.wordpress.BlogPostInfoUpdater;
 import de.vzg.wis.wordpress.Post2PDFConverter;
 import de.vzg.wis.wordpress.PostFetcher;
 import de.vzg.wis.wordpress.model.Post;
@@ -25,6 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.output.XMLOutputter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,11 +34,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-
 @RestController
 @RequestMapping("/api")
 @CrossOrigin(origins = "*", exposedHeaders = "Content-Disposition")
 public class ServiceResource {
+
+    @Autowired
+    PostFetcher postFetcher;
+
+    @Autowired
+    private ArticleDetectorService articleDetectorService;
+
+    @Autowired
+    private BlogPostInfoUpdater postInfoUpdater;
+
+    @Autowired
+    private MyCoReObjectInfoUpdater objectInfoUpdater;
 
     @GetMapping(value = "/config", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody String getConfigurations() {
@@ -50,69 +62,78 @@ public class ServiceResource {
                 return f.getName().equals("password") || f.getName().equals("username");
             }
 
-            @Override public boolean shouldSkipClass(Class<?> clazz) {
+            @Override
+            public boolean shouldSkipClass(Class<?> clazz) {
                 return false;
             }
         });
         return g.create().toJson(configParts);
     }
 
-
     @GetMapping(value = "/compare/{config}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public @ResponseBody String compare(@PathVariable("config") String config) throws IOException, JDOMException, ConfigNotFoundException {
+    public @ResponseBody String compare(@PathVariable("config") String config)
+        throws IOException, JDOMException, ConfigNotFoundException, URISyntaxException {
         final Map<String, ImporterConfigurationPart> configParts = ImporterConfiguration.getConfiguration().getParts();
-        if(!configParts.containsKey(config)){
+        if (!configParts.containsKey(config)) {
             throw new ConfigNotFoundException("There is not configuration " + config);
         }
 
-        final WordpressMyCoReCompare wordpressMyCoReCompare = new WordpressMyCoReCompare(configParts.get(config));
-        return new Gson().toJson(wordpressMyCoReCompare.compare());
+        ImporterConfigurationPart configObj = configParts.get(config);
+
+        objectInfoUpdater.updateMyCoReObjectInfo(configObj.getRepository(), configObj.getUsername(),
+            configObj.getPassword(), configObj.getParentObject());
+        postInfoUpdater.updateBlogPostInfo(configObj.getBlog());
+
+        WordpressMyCoReComparingResult compare = articleDetectorService.getComparingResult(configObj.getBlog(),
+            configObj.getParentObject());
+
+        return new Gson().toJson(compare);
     }
 
     @GetMapping(value = "convert/mods/{config}/{id}", produces = MediaType.APPLICATION_XML_VALUE)
-    public @ResponseBody String convertBlogPostXML(@PathVariable("config") String configName, @PathVariable("id") int postID) {
+    public @ResponseBody String convertBlogPostXML(@PathVariable("config") String configName,
+        @PathVariable("id") int postID) {
         final ImporterConfigurationPart config = ImporterConfiguration.getConfiguration().getParts()
             .get(configName);
-        final LocalPostStore postStore = LocalPostStore.getInstance(config.getBlog());
-        final Post post = postStore.getPost(postID);
+        final Post post;
+        try {
+            post = postFetcher.fetchPost(config.getBlog(), postID);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         final Document mods = new Post2ModsConverter(post, config.getParentObject(), config.getBlog(),
             config.getPostTemplate(),
-            config.getLicense()
-        ).getMods();
+            config.getLicense()).getMods();
 
         return new XMLOutputter().outputString(mods);
     }
 
-
     @GetMapping(value = "revalidate/{config}/{id}", produces = MediaType.APPLICATION_XML_VALUE)
-    public @ResponseBody String revalidateMyCoReID(@PathVariable("config") String configName, String id){
+    public @ResponseBody String revalidateMyCoReID(@PathVariable("config") String configName, @PathVariable("id") String id)
+        throws IOException, URISyntaxException, JDOMException {
         final ImporterConfigurationPart config = ImporterConfiguration.getConfiguration().getParts()
             .get(configName);
-        LocalMyCoReObjectStore.getInstance(config.getRepository()).update(true, config.getUsername(),
-            config.getPassword());
+
+        objectInfoUpdater.updateMyCoReObject(config.getRepository(), config.getUsername(), config.getPassword(), id,
+            null);
         return "{}";
     }
 
-
     @RequestMapping("convert/pdf/{config}/{id}")
-    public void convertBlogPostPDF(@PathVariable("config") String configName, @PathVariable("id") int postID, HttpServletResponse response)
+    public void convertBlogPostPDF(@PathVariable("config") String configName, @PathVariable("id") int postID,
+        HttpServletResponse response)
         throws IOException {
         final ImporterConfigurationPart config = ImporterConfiguration.getConfiguration().getParts()
             .get(configName);
-        Post post = PostFetcher.fetchPost(config.getBlog(), postID);
+        Post post = postFetcher.fetchPost(config.getBlog(), postID);
         response.setHeader("Content-Disposition", "attachment; filename=\"" + Utils.getTitleFileName(post) + "\"");
         ServletOutputStream outputStream = response.getOutputStream();
 
         try {
-                new Post2PDFConverter().getPDF(post, outputStream, config.getBlog(), config.getLicense());
-            } catch (TransformerException | URISyntaxException e) {
-                throw new RuntimeException("Error while generating PDF!", e);
-            }
-
-
-
+            new Post2PDFConverter().getPDF(post, outputStream, config.getBlog(), config.getLicense());
+        } catch (TransformerException | URISyntaxException e) {
+            throw new RuntimeException("Error while generating PDF!", e);
+        }
     }
-
-
 
 }

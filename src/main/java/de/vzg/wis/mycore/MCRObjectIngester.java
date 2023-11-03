@@ -15,14 +15,16 @@ import org.apache.logging.log4j.LogManager;
 import org.jdom2.Document;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
+import org.springframework.stereotype.Service;
 
 
+@Service
 public class MCRObjectIngester {
 
     private static final String OBJECT_API_PATH = "api/v1/objects";
 
-    public static String ingestObject(String repo, String auth, Document object) throws IOException {
-        final String uriString = Utils.getFixedURL(repo) + OBJECT_API_PATH;
+    public String ingestObject(String repo, String auth, Document object) throws IOException {
+        final String uriString = Utils.appendSlashIfNotPresent(repo) + OBJECT_API_PATH;
         final HttpClient httpClient = HttpClientBuilder.create().build();
         final HttpPost post = new HttpPost(uriString);
         post.setHeader("User-Agent", Utils.getUserAgent());
@@ -44,9 +46,9 @@ public class MCRObjectIngester {
                 .getStatusLine().getReasonPhrase());
     }
 
-    public static String createDerivate(String repo, String auth, String parentObjectID)
+    public String createDerivate(String repo, String auth, String parentObjectID)
         throws IOException {
-        final String uriString = Utils.getFixedURL(repo) + OBJECT_API_PATH + "/" + parentObjectID + "/derivates";
+        final String uriString = Utils.appendSlashIfNotPresent(repo) + OBJECT_API_PATH + "/" + parentObjectID + "/derivates";
         LogManager.getLogger().info("Sending derivate to {}", uriString);
         final HttpClient httpClient = HttpClientBuilder.create().build();
         final HttpPost post = new HttpPost(uriString);
@@ -71,10 +73,10 @@ public class MCRObjectIngester {
                 .getStatusLine().getReasonPhrase());
     }
 
-    public static void uploadFile(String repo, String auth, String derivate, String parentObjectID, byte[] pdf,
+    public void uploadFile(String repo, String auth, String derivate, String parentObjectID, byte[] pdf,
         String fileName) throws IOException {
         final String uriString =
-            Utils.getFixedURL(repo) + OBJECT_API_PATH + "/" + parentObjectID + "/derivates/" + derivate + "/contents";
+            Utils.appendSlashIfNotPresent(repo) + OBJECT_API_PATH + "/" + parentObjectID + "/derivates/" + derivate + "/contents";
         final HttpClient httpClient = HttpClientBuilder.create().build();
         final HttpPost post = new HttpPost(uriString);
         post.setHeader("User-Agent", Utils.getUserAgent());
