@@ -64,7 +64,7 @@ public class BlogPostInfoUpdater {
             }
 
             existing.setTitle(post.getTitle().getRendered());
-            existing.setDate(Utils.getWPDate(post.getDate()));
+            existing.setDate(Utils.getWPDate(post.getModified()));
             existing.setUrl(post.getLink());
             blogPostInfoRepository.save(existing);
         });
