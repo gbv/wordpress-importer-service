@@ -45,11 +45,16 @@ public class Utils {
             new URI(uriString);
             return uriString;
         } catch (URISyntaxException ex) {
-            URL url = new URL(uriString);
-            URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(),
-                url.getQuery(), url.getRef());
-            url = uri.toURL();
-            return url.toString();
+            try {
+                URL url = new URL(uriString);
+                URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(),
+                        url.getQuery(), url.getRef());
+                url = uri.toURL();
+                return url.toString();
+            } catch (MalformedURLException e) {
+                LOGGER.warn("Could not encode URI: {}", uriString);
+                return "";
+            }
         }
     }
 

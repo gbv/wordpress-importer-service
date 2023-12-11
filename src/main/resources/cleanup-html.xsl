@@ -49,9 +49,12 @@
 
   <xsl:template match="html:a[@href]">
     <xsl:copy>
-      <xsl:attribute name="href">
-        <xsl:value-of select="util:encodeURI(@href)" />
-      </xsl:attribute>
+      <xsl:variable name="href" select="util:encodeURI(@href)" />
+      <xsl:if test="string-length($href) &gt; 0">
+        <xsl:attribute name="href">
+          <xsl:value-of select="$href" />
+        </xsl:attribute>
+      </xsl:if>
 
       <xsl:apply-templates select="@*|node()" />
     </xsl:copy>
