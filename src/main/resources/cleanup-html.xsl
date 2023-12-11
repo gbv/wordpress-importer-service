@@ -2,7 +2,7 @@
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:html="http://www.w3.org/1999/xhtml"
                 xmlns:xalan="http://xml.apache.org/xalan"
-                xmlns:util="xalan://de.vzg.service.Utils"
+                xmlns:util="xalan://de.vzg.wis.Utils"
                 exclude-result-prefixes="xalan util">
 
   <xsl:output method="xml" />
@@ -49,9 +49,12 @@
 
   <xsl:template match="html:a[@href]">
     <xsl:copy>
-      <xsl:attribute name="href">
-        <xsl:value-of select="util:encodeURI(@href)" />
-      </xsl:attribute>
+      <xsl:variable name="href" select="util:encodeURI(@href)" />
+      <xsl:if test="string-length($href) &gt; 0">
+        <xsl:attribute name="href">
+          <xsl:value-of select="$href" />
+        </xsl:attribute>
+      </xsl:if>
 
       <xsl:apply-templates select="@*|node()" />
     </xsl:copy>
