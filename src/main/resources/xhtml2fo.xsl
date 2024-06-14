@@ -1750,15 +1750,23 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
   =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-->
 
   <xsl:template match="html:a">
-    <fo:inline>
-      <xsl:call-template name="process-common-attributes-and-children"/>
-    </fo:inline>
-  </xsl:template>
-
-  <xsl:template match="html:a[@href]">
-    <fo:basic-link xsl:use-attribute-sets="a-link">
-      <xsl:call-template name="process-a-link"/>
-    </fo:basic-link>
+    <xsl:choose>
+      <xsl:when test="not(@href)">
+        <fo:inline>
+          <xsl:call-template name="process-common-attributes-and-children"/>
+        </fo:inline>
+      </xsl:when>
+      <xsl:when test="@href = '#'">
+        <fo:inline>
+          <xsl:call-template name="process-common-attributes-and-children"/>
+        </fo:inline>
+      </xsl:when>
+        <xsl:otherwise>
+          <fo:basic-link xsl:use-attribute-sets="a-link">
+            <xsl:call-template name="process-a-link"/>
+          </fo:basic-link>
+        </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
 
   <xsl:template name="process-a-link">
