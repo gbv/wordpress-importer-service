@@ -689,6 +689,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
             <xsl:value-of select="$value"/>
           </xsl:attribute>
         </xsl:when>
+        <xsl:when test="$name = 'list-style-type'">
+        </xsl:when>
         <xsl:when test="$name = 'vertical-align' and (
                                  self::html:table or self::html:caption or
                                  self::html:thead or self::html:tfoot or
