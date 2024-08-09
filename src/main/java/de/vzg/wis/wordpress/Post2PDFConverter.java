@@ -47,11 +47,6 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import de.vzg.wis.configuration.ImporterConfigurationLicense;
-import de.vzg.wis.wordpress.model.MayAuthorList;
-import de.vzg.wis.wordpress.model.Post;
-import de.vzg.wis.wordpress.model.Author;
-import de.vzg.wis.wordpress.model.PostContent;
 import org.apache.fop.apps.FOPException;
 import org.apache.fop.apps.FOUserAgent;
 import org.apache.fop.apps.FopFactory;
@@ -67,6 +62,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Entities;
 import org.xml.sax.helpers.DefaultHandler;
 
+import de.vzg.wis.configuration.ImporterConfigurationLicense;
+import de.vzg.wis.wordpress.model.Author;
+import de.vzg.wis.wordpress.model.MayAuthorList;
+import de.vzg.wis.wordpress.model.Post;
+import de.vzg.wis.wordpress.model.PostContent;
+
 
 
 public class Post2PDFConverter {
@@ -80,9 +81,10 @@ public class Post2PDFConverter {
 
     }
 
-    public void getPDF(Post post, OutputStream os, String blog, ImporterConfigurationLicense license)
+    public void getPDF(Post post, OutputStream os, String blog, ImporterConfigurationLicense license,
+        String additionalXHTML)
             throws TransformerException, IOException {
-        String htmlContent = getXHtml(post, blog, license);
+        String htmlContent = getXHtml(post, blog, license, additionalXHTML);
 
         ByteArrayOutputStream result;
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("cleanup-html.xsl")) {
@@ -113,8 +115,13 @@ public class Post2PDFConverter {
         }
     }
 
-    private String getXHtml(Post post, String blog, ImporterConfigurationLicense license) throws IOException {
+    private String getXHtml(Post post, String blog, ImporterConfigurationLicense license, String additionalXHTML)
+        throws IOException {
         String htmlString = getBaseHTML(post, blog);
+
+        if (additionalXHTML != null) {
+            htmlString = additionalXHTML + htmlString;
+        }
 
         htmlString += Optional.ofNullable(post.getContent())
                 .map(PostContent::getRendered)

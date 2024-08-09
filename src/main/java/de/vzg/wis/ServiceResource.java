@@ -6,22 +6,6 @@ import java.util.Map;
 
 import javax.xml.transform.TransformerException;
 
-import com.google.gson.ExclusionStrategy;
-import com.google.gson.FieldAttributes;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import de.vzg.wis.configuration.ConfigNotFoundException;
-import de.vzg.wis.configuration.ImporterConfiguration;
-import de.vzg.wis.configuration.ImporterConfigurationPart;
-
-import de.vzg.wis.mycore.MyCoReObjectInfoUpdater;
-import de.vzg.wis.wordpress.BlogPostInfoUpdater;
-import de.vzg.wis.wordpress.Post2PDFConverter;
-import de.vzg.wis.wordpress.PostFetcher;
-import de.vzg.wis.wordpress.model.Post;
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletResponse;
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.output.XMLOutputter;
@@ -33,6 +17,22 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import de.vzg.wis.configuration.ConfigNotFoundException;
+import de.vzg.wis.configuration.ImporterConfiguration;
+import de.vzg.wis.configuration.ImporterConfigurationPart;
+import de.vzg.wis.mycore.MyCoReObjectInfoUpdater;
+import de.vzg.wis.wordpress.BlogPostInfoUpdater;
+import de.vzg.wis.wordpress.Post2PDFConverter;
+import de.vzg.wis.wordpress.PostFetcher;
+import de.vzg.wis.wordpress.model.Post;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api")
@@ -130,7 +130,7 @@ public class ServiceResource {
         ServletOutputStream outputStream = response.getOutputStream();
 
         try {
-            new Post2PDFConverter().getPDF(post, outputStream, config.getBlog(), config.getLicense());
+            new Post2PDFConverter().getPDF(post, outputStream, config.getBlog(), config.getLicense(), config.getAdditionalXHTML());
         } catch (TransformerException | URISyntaxException e) {
             throw new RuntimeException("Error while generating PDF!", e);
         }

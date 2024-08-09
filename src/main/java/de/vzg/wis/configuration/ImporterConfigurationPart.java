@@ -37,6 +37,16 @@ public class ImporterConfigurationPart {
      */
     private String postTemplate;
 
+    /**
+     * Additional XHTML which will be prepended to the post
+     */
+    private String additionalXHTML;
+
+    /**
+     * Should the PDF be imported (default: true)
+     */
+    private boolean importPDF = true;
+
     private ImporterConfigurationLicense license;
 
     public String getBlog() {
@@ -101,5 +111,21 @@ public class ImporterConfigurationPart {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getAdditionalXHTML() {
+        return additionalXHTML;
+    }
+
+    public void setAdditionalXHTML(String additionalXHTML) {
+        this.additionalXHTML = additionalXHTML;
+    }
+
+    public boolean isImportPDF() {
+        return importPDF;
+    }
+
+    public void setImportPDF(boolean importPDF) {
+        this.importPDF = importPDF;
     }
 }

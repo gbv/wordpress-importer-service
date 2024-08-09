@@ -21,13 +21,13 @@ public class MyCoReObjectInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "mycore_id", length = 20, nullable = false)
+    @Column(name = "mycore_id", length = 128, nullable = false)
     private String mycoreId;
 
-    @Column(name = "parent_mycore_id", length = 20, nullable = false)
+    @Column(name = "parent_mycore_id", length = 128, nullable = false)
     private String parentMycoreId;
 
-    @Column(name = "wordpress_id", length = 20)
+    @Column(name = "wordpress_id")
     private Long wordpressId; // saved in recordInfo
 
     @Column(name = "wordpress_url", length = 1000)

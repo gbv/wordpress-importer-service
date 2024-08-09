@@ -6,10 +6,17 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 import javax.xml.transform.TransformerException;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jdom2.Document;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import de.vzg.wis.configuration.ImporterConfiguration;
 import de.vzg.wis.configuration.ImporterConfigurationPart;
@@ -20,18 +27,6 @@ import de.vzg.wis.wordpress.BlogPostInfoUpdater;
 import de.vzg.wis.wordpress.Post2PDFConverter;
 import de.vzg.wis.wordpress.PostFetcher;
 import de.vzg.wis.wordpress.model.Post;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.jdom2.Document;
-import org.jdom2.output.Format;
-import org.jdom2.output.XMLOutputter;
-
-
-import jakarta.servlet.ServletContextListener;
-import jakarta.servlet.annotation.WebListener;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 
 @Service
@@ -112,15 +107,19 @@ public class WordpressAutoImporter implements Runnable {
                         .getMods();
 
                     final ByteArrayOutputStream pdfDocumentStream = new ByteArrayOutputStream();
-                    try {
-                        new Post2PDFConverter()
-                            .getPDF(post, pdfDocumentStream, config.getBlog(), config.getLicense());
-                    } catch (IOException | URISyntaxException | TransformerException e) {
-                        LOGGER.error("Error while generating PDF for post ID: " + post.getId() + " LINK: " + post.getLink(),
-                            e);
-                        LOGGER.info("Continue with next post!");
-                        continue;
+                    if(config.isImportPDF()) {
+                        try {
+                            new Post2PDFConverter()
+                                .getPDF(post, pdfDocumentStream, config.getBlog(), config.getLicense(),
+                                        config.getAdditionalXHTML());
+                        } catch (IOException | URISyntaxException | TransformerException e) {
+                            LOGGER.error("Error while generating PDF for post ID: " + post.getId() + " LINK: " + post.getLink(),
+                                e);
+                            LOGGER.info("Continue with next post!");
+                            continue;
+                        }
                     }
+
 
                     final String objectID;
                     try {
@@ -131,28 +130,31 @@ public class WordpressAutoImporter implements Runnable {
                         LOGGER.info("Continue with next post!");
                         continue;
                     }
-                    final String derivateID;
-                    try {
 
-                        derivateID = objectIngester.createDerivate(config.getRepository(),
-                                loginToken,
-                                objectID);
-                    } catch (IOException e) {
-                        LOGGER.error("Error while ingesting Derivate: " + post.getId() + "!", e);
-                        LOGGER.info("Continue with next post!");
-                        continue;
-                    }
+                    if(config.isImportPDF()) {
+                        final String derivateID;
+                        try {
 
-                    try {
-                        objectIngester.uploadFile(config.getRepository(),
-                            loginToken,
-                            derivateID,
-                            objectID,
-                            pdfDocumentStream.toByteArray(),
-                            Utils.getTitleFileName(post));
-                    } catch (IOException e) {
-                        LOGGER.error("Error while ingesting Derivate: " + post.getId() + "!", e);
-                        LOGGER.info("Continue with next post!");
+                            derivateID = objectIngester.createDerivate(config.getRepository(),
+                                    loginToken,
+                                    objectID);
+                        } catch (IOException e) {
+                            LOGGER.error("Error while ingesting Derivate: " + post.getId() + "!", e);
+                            LOGGER.info("Continue with next post!");
+                            continue;
+                        }
+
+                        try {
+                            objectIngester.uploadFile(config.getRepository(),
+                                    loginToken,
+                                    derivateID,
+                                    objectID,
+                                    pdfDocumentStream.toByteArray(),
+                                    Utils.getTitleFileName(post));
+                        } catch (IOException e) {
+                            LOGGER.error("Error while ingesting Derivate: " + post.getId() + "!", e);
+                            LOGGER.info("Continue with next post!");
+                        }
                     }
 
                     objectInfoUpdater.updateMyCoReObject(config.getRepository(), config.getUsername(),
