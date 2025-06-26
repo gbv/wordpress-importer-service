@@ -45,7 +45,7 @@ public class ObjectFetcher {
         }
 
         final HttpClient httpClient = HttpClientBuilder.create().build();
-        final String uri = Utils.appendSlashIfNotPresent(repo) + V2_OBJECT_PATH + mycoreID;
+        final String uri = Utils.appendSlashIfNotPresent(repo) + V2_OBJECT_PATH + (mycoreID.isBlank() ? "?limit=9999999" : mycoreID);
         final HttpGet get = new HttpGet(uri);
 
         get.setHeader("User-Agent", Utils.getUserAgent());
