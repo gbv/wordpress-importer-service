@@ -47,6 +47,7 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import de.vzg.wis.wordpress.model.*;
 import org.apache.fop.apps.FOPException;
 import org.apache.fop.apps.FOUserAgent;
 import org.apache.fop.apps.FopFactory;
@@ -63,11 +64,6 @@ import org.jsoup.nodes.Entities;
 import org.xml.sax.helpers.DefaultHandler;
 
 import de.vzg.wis.configuration.ImporterConfigurationLicense;
-import de.vzg.wis.wordpress.model.Author;
-import de.vzg.wis.wordpress.model.MayAuthorList;
-import de.vzg.wis.wordpress.model.Post;
-import de.vzg.wis.wordpress.model.PostContent;
-
 
 
 public class Post2PDFConverter {
@@ -169,6 +165,11 @@ public class Post2PDFConverter {
             htmlString += "<h2>" + replaceLangBBCode(post.getSubline()) + "</h2>";
         }
 
+        String subtitle = post.getACF("subline");
+        if (subtitle != null && !subtitle.isBlank()) {
+            htmlString += "<h2>" + subtitle + "</h2>";
+        }
+
         final List<Integer> authorIds = Optional.ofNullable(post.getAuthors())
                 .orElse(new MayAuthorList())
                 .getAuthorIds();
@@ -177,7 +178,7 @@ public class Post2PDFConverter {
                 .orElse(new MayAuthorList())
                 .getAuthorNames();
 
-        final String combinedNamesStr;
+        String combinedNamesStr;
         if (authorIds != null && authorIds.size() > 0) {
             combinedNamesStr = authorIds.stream().map(authorID -> {
                         try {
@@ -197,6 +198,13 @@ public class Post2PDFConverter {
             combinedNamesStr = String.join(", ", delegateAuthors);
         } else {
             combinedNamesStr = UserFetcher.fetchUser(blog, post.getAuthor()).getName();
+        }
+
+        if(post.getCoAuthors() != null && !post.getCoAuthors().isEmpty()) {
+            combinedNamesStr += ", " + post.getCoAuthors()
+                    .stream()
+                    .map(CoAuthor::getDisplay_name)
+                    .collect(Collectors.joining(", "));
         }
 
         htmlString += "<hr/><table border='0'><tr><td>" + combinedNamesStr + "</td>";

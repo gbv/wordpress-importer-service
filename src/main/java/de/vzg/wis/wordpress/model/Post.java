@@ -18,6 +18,7 @@
 
 package de.vzg.wis.wordpress.model;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.google.gson.JsonElement;
@@ -32,6 +33,8 @@ public class Post {
     private String wps_subtitle, date, modified, link;
 
     private PostContent title, content;
+
+    private List<CoAuthor> coauthors;
 
     private String layout_flexible_0_text_area, subline;
 
@@ -165,5 +168,13 @@ public class Post {
     }
     public void setAcf(JsonElement acf) {
         this.acf = acf;
+    }
+
+    public List<CoAuthor> getCoAuthors() {
+        return coauthors;
+    }
+
+    public void setCoAuthor(List<CoAuthor> coAuthors) {
+        this.coauthors = coAuthors;
     }
 }

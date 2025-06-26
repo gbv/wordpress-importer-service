@@ -26,10 +26,7 @@ import de.vzg.wis.configuration.ImporterConfigurationLicense;
 import de.vzg.wis.mycore.MODSUtil;
 import de.vzg.wis.wordpress.AuthorFetcher;
 import de.vzg.wis.wordpress.UserFetcher;
-import de.vzg.wis.wordpress.model.Author;
-import de.vzg.wis.wordpress.model.MayAuthorList;
-import de.vzg.wis.wordpress.model.Post;
-import de.vzg.wis.wordpress.model.User;
+import de.vzg.wis.wordpress.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
@@ -150,6 +147,9 @@ public class Post2ModsConverter {
 
             titleElement.setText(mainTitle);
             subTitleElement.setText(subTitle);
+        } else if(Optional.ofNullable(blogPost.getACF("subline")).filter(Predicate.not(String::isBlank)).isPresent()) {
+            titleElement.setText(completeTitle);
+            subTitleElement.setText(blogPost.getACF("subline"));
         } else if (subTitle !=null && !subTitle.isEmpty()) {
             titleElement.setText(completeTitle);
             subTitleElement.setText(subTitle);
@@ -192,6 +192,15 @@ public class Post2ModsConverter {
             delegateAuthors.forEach(authorName -> insertAuthor(authorName, "spk"));
         } else {
             createAuthorFromUser(blogPost.getAuthor());
+        }
+
+        if(blogPost.getCoAuthors() != null && !blogPost.getCoAuthors().isEmpty()) {
+            blogPost.getCoAuthors()
+                    .stream()
+                    .map(CoAuthor::getDisplay_name)
+                    .forEach(coAuthor -> {
+                insertAuthor(coAuthor, "aut", true);
+            });
         }
     }
 
