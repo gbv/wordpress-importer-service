@@ -201,11 +201,14 @@ public class Post2PDFConverter {
         }
 
         if(post.getCoAuthors() != null && !post.getCoAuthors().isEmpty()) {
-            combinedNamesStr += ", " + post.getCoAuthors()
+            String filteredCoauthors = post.getCoAuthors()
                     .stream()
                     .map(CoAuthor::getDisplay_name)
                     .filter(Predicate.not(combinedNamesStr::contains))
                     .collect(Collectors.joining(", "));
+            if (!combinedNamesStr.isEmpty()) {
+                combinedNamesStr += ", " + filteredCoauthors;
+            }
         }
 
         htmlString += "<hr/><table border='0'><tr><td>" + combinedNamesStr + "</td>";
