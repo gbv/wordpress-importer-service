@@ -204,6 +204,7 @@ public class Post2PDFConverter {
             combinedNamesStr += ", " + post.getCoAuthors()
                     .stream()
                     .map(CoAuthor::getDisplay_name)
+                    .filter(Predicate.not(combinedNamesStr::contains))
                     .collect(Collectors.joining(", "));
         }
 

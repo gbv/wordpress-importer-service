@@ -9,12 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -169,6 +164,9 @@ public class Post2ModsConverter {
     }
 
     private void setAuthors() {
+        // collects all display names of authors to avoid duplicates with co-authors
+        final List<String> displayNameCollect = new ArrayList<>();
+
         final List<Integer> authorIds = Optional.ofNullable(blogPost.getAuthors()).orElse(new MayAuthorList()).getAuthorIds();
         final List<String> authorNames = Optional.ofNullable(blogPost.getAuthors()).orElse(new MayAuthorList()).getAuthorNames();
         final Element authorInTemplate = getElement(AUTHOR_XPATH);
@@ -179,44 +177,45 @@ public class Post2ModsConverter {
 
         if (authorIds != null && authorIds.size() > 0) {
             Collections.reverse(authorIds);
-            authorIds.forEach(this::createAuthorFromAuthor);
+            authorIds.forEach(authorID -> createAuthorFromAuthor(authorID, displayNameCollect));
         } else if (authorNames != null && authorNames.size() > 0) {
             Collections.reverse(authorNames);
-            authorNames.forEach(authorName -> insertAuthor(authorName, "aut", true));
+            authorNames.forEach(authorName -> insertAuthor(authorName, "aut", true, displayNameCollect));
         } else if (blogPost.getDelegate1() != null || blogPost.getDelegate2() != null || blogPost.getDelegate3() != null) {
             List<String> delegateAuthors = Stream.of(blogPost.getDelegate1(), blogPost.getDelegate2(), blogPost.getDelegate3())
                     .filter(Objects::nonNull)
                     .filter(Predicate.not(String::isEmpty))
                     .collect(Collectors.toList());
             Collections.reverse(delegateAuthors);
-            delegateAuthors.forEach(authorName -> insertAuthor(authorName, "spk"));
+            delegateAuthors.forEach(authorName -> insertAuthor(authorName, "spk", displayNameCollect));
         } else {
-            createAuthorFromUser(blogPost.getAuthor());
+            createAuthorFromUser(blogPost.getAuthor(), displayNameCollect);
         }
 
         if(blogPost.getCoAuthors() != null && !blogPost.getCoAuthors().isEmpty()) {
             blogPost.getCoAuthors()
                     .stream()
                     .map(CoAuthor::getDisplay_name)
+                    .filter(Objects::nonNull)
                     .forEach(coAuthor -> {
-                insertAuthor(coAuthor, "aut", true);
+                insertAuthor(coAuthor, "aut", true, displayNameCollect);
             });
         }
     }
 
-    private void createAuthorFromAuthor(Integer authorID) {
+    private void createAuthorFromAuthor(Integer authorID, List<String> displayNameCollect) {
         try {
             final Author author = AuthorFetcher.fetchAuthor(blogURL, authorID);
-            insertAuthor(author.getName(), "aut", true);
+            insertAuthor(author.getName(), "aut", true, displayNameCollect);
         } catch (IOException e) {
             LOGGER.error("Error while fetching Author with ID " + authorID, e);
         }
     }
 
-    private void createAuthorFromUser(Integer userID) {
+    private void createAuthorFromUser(Integer userID, List<String> displayNameCollect) {
         try {
             final User author = UserFetcher.fetchUser(blogURL, userID);
-            insertAuthor(author.getName(), "aut", true);
+            insertAuthor(author.getName(), "aut", true, displayNameCollect);
         } catch (IOException e) {
             LOGGER.error("Error while fetching User with ID " + userID, e);
         }
@@ -236,11 +235,11 @@ public class Post2ModsConverter {
         return false;
     }
 
-    private void insertAuthor(String authorName, String roleStr) {
-        insertAuthor(authorName, roleStr, false);
+    private void insertAuthor(String authorName, String roleStr, List<String> displayNameCollect) {
+        insertAuthor(authorName, roleStr, false, displayNameCollect);
     }
 
-    private void insertAuthor(String authorName, String roleStr, boolean generateDisplayForm) {
+    private void insertAuthor(String authorName, String roleStr, boolean generateDisplayForm, List<String> displayNameCollect) {
         if (authorName == null) {
             return;
         }
@@ -300,10 +299,25 @@ public class Post2ModsConverter {
                 familyNameElement.getParent().removeContent(familyNameElement);
             }
 
+
+
         if(generateDisplayForm){
-            displayFormElement.setText(Stream.of(sureName, foreName).filter(Objects::nonNull).collect(Collectors.joining(", ")));
+            String displayForm = Stream.of(sureName, foreName).filter(Objects::nonNull).collect(Collectors.joining(", "));
+            displayFormElement.setText(displayForm);
+
+            if(displayNameCollect.contains(displayForm)){
+                modsName.detach();
+                return;
+            }
+
+            displayNameCollect.add(displayForm);
         } else {
+            if(displayNameCollect.contains(authorName)){
+                modsName.detach();
+                return;
+            }
             displayFormElement.setText(authorName);
+            displayNameCollect.add(authorName);
         }
 
     }
