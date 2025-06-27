@@ -18,6 +18,7 @@
 
 package de.vzg.wis.wordpress.model;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,8 +34,6 @@ public class Post {
     private String wps_subtitle, date, modified, link;
 
     private PostContent title, content;
-
-    private List<CoAuthor> coauthors;
 
     private String layout_flexible_0_text_area, subline;
 
@@ -171,10 +170,20 @@ public class Post {
     }
 
     public List<CoAuthor> getCoAuthors() {
-        return coauthors;
+        /*
+        return empty list, because the coauthors model conflict rechtsempirie has [ 318, 359, 358 ] and verfassungsblog has
+          "coauthors": [
+            {
+              "display_name": "...",
+              "user_nicename": "..."
+            },
+            {
+              "display_name": "...",
+              "user_nicename": "."
+            }
+          ]
+         */
+        return Collections.emptyList();
     }
 
-    public void setCoAuthor(List<CoAuthor> coAuthors) {
-        this.coauthors = coAuthors;
-    }
 }
