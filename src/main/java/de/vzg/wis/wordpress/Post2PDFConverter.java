@@ -42,6 +42,7 @@ import java.util.stream.Stream;
 import javax.xml.transform.Result;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.stream.StreamResult;
@@ -84,7 +85,8 @@ public class Post2PDFConverter {
 
         ByteArrayOutputStream result;
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("cleanup-html.xsl")) {
-            Transformer transformer = SAXTransformerFactory.newInstance().newTransformer(new StreamSource(is));
+            Transformer transformer = getTransformerFactory()
+                .newTransformer(new StreamSource(is));
             final byte[] bytes = htmlContent.getBytes(StandardCharsets.UTF_8);
             try (final ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes)) {
                 StreamSource htmlSource = new StreamSource(inputStream);
@@ -96,7 +98,7 @@ public class Post2PDFConverter {
         LOGGER.info(new String(cleanBytes, Charset.defaultCharset()));
 
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("xhtml2fo.xsl")) {
-            Transformer transformer = SAXTransformerFactory.newInstance().newTransformer(new StreamSource(is));
+            Transformer transformer = getTransformerFactory().newTransformer(new StreamSource(is));
             try (final ByteArrayInputStream inputStream = new ByteArrayInputStream(cleanBytes)) {
                 StreamSource htmlSource = new StreamSource(inputStream);
                 final FOUserAgent userAgent = fopFactory.newFOUserAgent();
@@ -109,6 +111,12 @@ public class Post2PDFConverter {
                 throw new TransformerException("Error while formatting PDF", e);
             }
         }
+    }
+
+    private static TransformerFactory getTransformerFactory() {
+        return SAXTransformerFactory.newInstance(
+            "org.apache.xalan.processor.TransformerFactoryImpl",
+            Post2PDFConverter.class.getClassLoader());
     }
 
     private String getXHtml(Post post, String blog, ImporterConfigurationLicense license, String additionalXHTML)

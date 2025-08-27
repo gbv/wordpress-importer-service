@@ -34,6 +34,12 @@
     <!-- remove this -->
   </xsl:template>
 
+  <xsl:template match="@id">
+    <!-- remove all ids -->
+  </xsl:template>
+
+
+
   <xsl:template match="html:table[contains(@class,'footnote-reference-container')]">
     <xsl:if test="html:tbody/html:tr">
       <html:ul>
@@ -66,6 +72,29 @@
     <xsl:if test="generate-id(.)=generate-id(key('names', .)[1])">
       <xsl:copy-of select="." />
     </xsl:if>
+  </xsl:template>
+
+  <xsl:template match="@color[contains(., '!important')]"><!-- Entfernt !important aus color-Attribut -->
+    <xsl:attribute name="color">
+      <xsl:value-of select="normalize-space(substring-before(., '!important'))" />
+    </xsl:attribute>
+  </xsl:template>
+
+  <!-- Entfernt alle Attribute, deren Name mit - beginnt (CSS Custom Properties) -->
+  <xsl:template match="@*[starts-with(local-name(), '--')]"/>
+
+  <!-- Entfernt opacity, display und CSS-Variablen aus style-Attributen -->
+  <xsl:template match="@style">
+    <xsl:attribute name="style">
+      <xsl:variable name="styleString" select="."/>
+      <xsl:for-each select="str:tokenize($styleString, ';')" xmlns:str="http://exslt.org/strings">
+        <xsl:variable name="item" select="normalize-space(.)"/>
+        <xsl:if test="not(starts-with(translate($item, 'OPACITY', 'opacity'), 'opacity')) and not(starts-with(translate($item, 'DISPLAY', 'display'), 'display')) and not(starts-with($item, '--')) and string-length($item) &gt; 0">
+          <xsl:value-of select="$item"/>
+          <xsl:if test="position() != last()">; </xsl:if>
+        </xsl:if>
+      </xsl:for-each>
+    </xsl:attribute>
   </xsl:template>
 
 </xsl:stylesheet>
