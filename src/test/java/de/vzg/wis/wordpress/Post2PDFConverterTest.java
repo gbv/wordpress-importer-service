@@ -4,11 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import de.vzg.wis.wordpress.model.Post;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import javax.xml.transform.TransformerException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

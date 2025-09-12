@@ -22,30 +22,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
 import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import de.vzg.wis.Post2ModsConverter;
 import de.vzg.wis.Utils;
-import de.vzg.wis.configuration.ImporterConfigurationLicense;
 import de.vzg.wis.wordpress.model.FailSafeAuthorsDeserializer;
 import de.vzg.wis.wordpress.model.MayAuthorList;
 import de.vzg.wis.wordpress.model.Post;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jdom2.output.Format;
-import org.jdom2.output.XMLOutputter;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -68,12 +61,14 @@ public class PostFetcher {
 
 
     public int fetchCount(String instanceURL) throws IOException {
-        final HttpClient httpClient = HttpClientBuilder.create().build();
-        final String uri = Utils.getFixedURL(instanceURL) + getEndpoint() + "?" + V2_POSTS_PER_PAGE + "=100";
-        LOGGER.debug("Fetching post count from {}", uri);
-        final HttpGet get = new HttpGet(uri);
-        final HttpResponse execute = httpClient.execute(get);
-        return Integer.parseInt(execute.getFirstHeader(V2_POST_COUNT).getValue());
+        try(final CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+          final String uri =
+              Utils.getFixedURL(instanceURL) + getEndpoint() + "?" + V2_POSTS_PER_PAGE + "=100";
+          LOGGER.debug("Fetching post count from {}", uri);
+          final HttpGet get = new HttpGet(uri);
+          final HttpResponse execute = httpClient.execute(get);
+          return Integer.parseInt(execute.getFirstHeader(V2_POST_COUNT).getValue());
+        }
     }
 
     private String getEndpoint() {
@@ -91,11 +86,12 @@ public class PostFetcher {
     }
 
     public Set<Post> fetchUntil(String instanceURL, OffsetDateTime until) throws IOException {
-        final HttpClient httpClient = HttpClientBuilder.create().build();
-        int pageCount = 999;
-        OffsetDateTime lastChanged = null;
-        Set<Post> postsUntil = new HashSet<Post>();
-        for (int i = 1; i <= pageCount && (lastChanged == null || lastChanged.isAfter(until)); i++) {
+        try(final CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+          int pageCount = 999;
+          OffsetDateTime lastChanged = null;
+          Set<Post> postsUntil = new HashSet<Post>();
+          for (int i = 1; i <= pageCount && (lastChanged == null || lastChanged.isAfter(until));
+              i++) {
             LOGGER.info("Last changed: {}", lastChanged);
 
             final String uri = buildURLForPage(instanceURL, i);
@@ -105,30 +101,28 @@ public class PostFetcher {
             final HttpResponse execute = httpClient.execute(get);
             pageCount = Integer.parseInt(execute.getFirstHeader(V2_POST_COUNT).getValue());
             try (final InputStream is = execute.getEntity().getContent()) {
-                try (final InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-                    final Post[] posts = getGson().fromJson(isr, Post[].class);
-                    for (Post modifiedPost : posts) {
-                        // LOGGER.info("Fetching: {}", modifiedPost.getTitle().getRendered());
-                        OffsetDateTime lm = Utils.getWPDate(modifiedPost.getModified());
-                        OffsetDateTime published = Utils.getWPDate(modifiedPost.getDate());
-                        OffsetDateTime lastChangedIntern = lm.isAfter(published) ? lm : published;
+              try (final InputStreamReader isr = new InputStreamReader(is,
+                  StandardCharsets.UTF_8)) {
+                final Post[] posts = getGson().fromJson(isr, Post[].class);
+                for (Post modifiedPost : posts) {
+                  // LOGGER.info("Fetching: {}", modifiedPost.getTitle().getRendered());
+                  OffsetDateTime lm = Utils.getWPDate(modifiedPost.getModified());
+                  OffsetDateTime published = Utils.getWPDate(modifiedPost.getDate());
+                  OffsetDateTime lastChangedIntern = lm.isAfter(published) ? lm : published;
 
-                        if (lastChangedIntern.isAfter(until)) {
-                            postsUntil.add(modifiedPost);
-                        } else {
-                            /*LOGGER.info("Post({}) is old: {} {}>={}", modifiedPost.getId(),
-                                modifiedPost.getTitle().getRendered(),
-                                lastChangedIntern, until);*/
-                        }
+                  if (lastChangedIntern.isAfter(until)) {
+                    postsUntil.add(modifiedPost);
+                  }
 
-                        if (lastChanged == null || lastChangedIntern.isBefore(lastChanged)) {
-                            lastChanged = lastChangedIntern;
-                        }
-                    }
+                  if (lastChanged == null || lastChangedIntern.isBefore(lastChanged)) {
+                    lastChanged = lastChangedIntern;
+                  }
                 }
+              }
             }
+          }
+          return postsUntil;
         }
-        return postsUntil;
     }
 
     public Gson getGson() {
@@ -138,16 +132,17 @@ public class PostFetcher {
     }
 
     public List<Post> fetch(String instanceURL, int page) throws IOException {
-        final HttpClient httpClient = HttpClientBuilder.create().build();
-        final String uri = buildURLForPage(instanceURL, page);
-        LOGGER.debug("Fetching : {}", uri);
-        final HttpGet get = new HttpGet(uri);
-        final HttpResponse execute = httpClient.execute(get);
+        try(final CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+          final String uri = buildURLForPage(instanceURL, page);
+          LOGGER.debug("Fetching : {}", uri);
+          final HttpGet get = new HttpGet(uri);
+          final HttpResponse execute = httpClient.execute(get);
 
-        try (final InputStream is = execute.getEntity().getContent()) {
+          try (final InputStream is = execute.getEntity().getContent()) {
             try (final InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-                return Arrays.asList(getGson().fromJson(isr, Post[].class));
+              return Arrays.asList(getGson().fromJson(isr, Post[].class));
             }
+          }
         }
     }
     private String buildURLForPage(String instanceURL, int page) {
@@ -156,16 +151,17 @@ public class PostFetcher {
     }
 
     public Post fetchPost(String instanceURL, int id) throws IOException {
-        final HttpClient httpClient = HttpClientBuilder.create().build();
-        final String uri = Utils.getFixedURL(instanceURL) + getEndpoint() + id;
-        LOGGER.debug("Fetching : {}", uri);
-        final HttpGet get = new HttpGet(uri);
-        final HttpResponse execute = httpClient.execute(get);
+        try(final CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+          final String uri = Utils.getFixedURL(instanceURL) + getEndpoint() + id;
+          LOGGER.info("Fetching : {}", uri);
+          final HttpGet get = new HttpGet(uri);
+          final HttpResponse execute = httpClient.execute(get);
 
-        try (final InputStream is = execute.getEntity().getContent()) {
+          try (final InputStream is = execute.getEntity().getContent()) {
             try (final InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-                return getGson().fromJson(isr, Post.class);
+              return getGson().fromJson(isr, Post.class);
             }
+          }
         }
     }
 

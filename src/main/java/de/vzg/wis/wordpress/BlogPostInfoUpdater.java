@@ -3,7 +3,6 @@ package de.vzg.wis.wordpress;
 import de.vzg.wis.Utils;
 import de.vzg.wis.jpa.BlogPostInfo;
 import de.vzg.wis.jpa.BlogPostInfoRepository;
-import de.vzg.wis.wordpress.PostFetcher;
 import de.vzg.wis.wordpress.model.Post;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

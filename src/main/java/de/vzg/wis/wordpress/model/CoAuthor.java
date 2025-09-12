@@ -2,8 +2,17 @@ package de.vzg.wis.wordpress.model;
 
 public class CoAuthor {
 
+    private int id;
     private String display_name;
     private String user_nicename;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public CoAuthor() {
     }

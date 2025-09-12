@@ -2,26 +2,24 @@ package de.vzg.wis;
 
 
 
+import de.vzg.wis.wordpress.NameUtil;
+import de.vzg.wis.wordpress.NameUtil.Name;
+import de.vzg.wis.wordpress.NameUtil.Name.Role;
+import de.vzg.wis.wordpress.model.Post;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
 
 import de.vzg.wis.configuration.ImporterConfiguration;
 import de.vzg.wis.configuration.ImporterConfigurationLicense;
 import de.vzg.wis.mycore.MODSUtil;
-import de.vzg.wis.wordpress.AuthorFetcher;
-import de.vzg.wis.wordpress.UserFetcher;
-import de.vzg.wis.wordpress.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
@@ -164,85 +162,21 @@ public class Post2ModsConverter {
     }
 
     private void setAuthors() {
-        // collects all display names of authors to avoid duplicates with co-authors
-        final List<String> displayNameCollect = new ArrayList<>();
-
-        final List<Integer> authorIds = Optional.ofNullable(blogPost.getAuthors()).orElse(new MayAuthorList()).getAuthorIds();
-        final List<String> authorNames = Optional.ofNullable(blogPost.getAuthors()).orElse(new MayAuthorList()).getAuthorNames();
         final Element authorInTemplate = getElement(AUTHOR_XPATH);
-
         if (authorInTemplate != null) {
             authorInTemplate.getParentElement().removeContent(authorInTemplate);
         }
 
-        if (authorIds != null && authorIds.size() > 0) {
-            Collections.reverse(authorIds);
-            authorIds.forEach(authorID -> createAuthorFromAuthor(authorID, displayNameCollect));
-        } else if (authorNames != null && authorNames.size() > 0) {
-            Collections.reverse(authorNames);
-            authorNames.forEach(authorName -> insertAuthor(authorName, "aut", true, displayNameCollect));
-        } else if (blogPost.getDelegate1() != null || blogPost.getDelegate2() != null || blogPost.getDelegate3() != null) {
-            List<String> delegateAuthors = Stream.of(blogPost.getDelegate1(), blogPost.getDelegate2(), blogPost.getDelegate3())
-                    .filter(Objects::nonNull)
-                    .filter(Predicate.not(String::isEmpty))
-                    .collect(Collectors.toList());
-            Collections.reverse(delegateAuthors);
-            delegateAuthors.forEach(authorName -> insertAuthor(authorName, "spk", displayNameCollect));
-        } else {
-            createAuthorFromUser(blogPost.getAuthor(), displayNameCollect);
-        }
-
-        if(blogPost.getCoAuthors() != null && !blogPost.getCoAuthors().isEmpty()) {
-            blogPost.getCoAuthors()
-                    .stream()
-                    .map(CoAuthor::getDisplay_name)
-                    .filter(Objects::nonNull)
-                    .forEach(coAuthor -> {
-                insertAuthor(coAuthor, "aut", true, displayNameCollect);
-            });
-        }
+        List<Name> authors = NameUtil.getAuthors(blogPost, blogURL);
+        authors.forEach(this::insertAuthor);
     }
 
-    private void createAuthorFromAuthor(Integer authorID, List<String> displayNameCollect) {
-        try {
-            final Author author = AuthorFetcher.fetchAuthor(blogURL, authorID);
-            insertAuthor(author.getName(), "aut", true, displayNameCollect);
-        } catch (IOException e) {
-            LOGGER.error("Error while fetching Author with ID " + authorID, e);
-        }
-    }
 
-    private void createAuthorFromUser(Integer userID, List<String> displayNameCollect) {
-        try {
-            final User author = UserFetcher.fetchUser(blogURL, userID);
-            insertAuthor(author.getName(), "aut", true, displayNameCollect);
-        } catch (IOException e) {
-            LOGGER.error("Error while fetching User with ID " + userID, e);
-        }
-    }
-
-    public boolean isParticle(String namePart) {
-        switch (namePart.toLowerCase(Locale.ROOT).replace(".","")) {
-            case "mr":
-            case "mrs":
-            case "ms":
-            case "miss":
-            case "mx":
-            case "madam":
-            case "sir":
-                return true;
-        }
-        return false;
-    }
-
-    private void insertAuthor(String authorName, String roleStr, List<String> displayNameCollect) {
-        insertAuthor(authorName, roleStr, false, displayNameCollect);
-    }
-
-    private void insertAuthor(String authorName, String roleStr, boolean generateDisplayForm, List<String> displayNameCollect) {
-        if (authorName == null) {
+    private void insertAuthor(Name name) {
+        if (name == null) {
             return;
         }
+
         final Element modsName = new Element("name", MODS_NAMESPACE);
         modsName.setAttribute("type", "personal");
         modsName.setAttribute("type", "simple", XLINK_NAMESPACE);
@@ -253,6 +187,11 @@ public class Post2ModsConverter {
         final Element roleTerm = new Element("roleTerm", MODS_NAMESPACE);
         roleTerm.setAttribute("type", "code");
         roleTerm.setAttribute("authority", "marcrelator");
+
+        String roleStr = "aut";
+        if (name.role().equals(Role.SPEAKER)) {
+            roleStr = "spk";
+        }
         roleTerm.setText(roleStr);
         role.addContent(roleTerm);
 
@@ -267,59 +206,32 @@ public class Post2ModsConverter {
         familyNameElement.setAttribute("type", "family");
         modsName.addContent(familyNameElement);
 
+        final Element particleElement = new Element("namePart", MODS_NAMESPACE);
+        particleElement.setAttribute("type", "termsAndParticles");
+        modsName.addContent(particleElement);
+
         final Element modsElement = getElement(MODS_XPATH);
         modsElement.addContent(modsElement.indexOf(getElement(MODS_TITLE_INFO)) + 1, modsName);
 
-        String foreName = null;
-        String sureName = null;
-
-        // only handles the form givenName familyName
-        if (authorName.contains(" ")) {
-            final String[] split = authorName.split(" ", 3);
-                if(split.length==3) {
-                    if (isParticle(split[0])) {
-                        foreName = split[1];
-                    } else {
-                        foreName = split[0] + " " + split[1];
-                    }
-                    sureName = split[2];
-
-                    givenNameElement.setText(foreName);
-                    familyNameElement.setText(sureName);
-                } else {
-                    if(!isParticle(split[0])){
-                        foreName = split[0];
-                        givenNameElement.setText(foreName);
-                    }
-                    sureName = split[1];
-                    familyNameElement.setText(sureName);
-                }
-            } else {
-                givenNameElement.getParent().removeContent(givenNameElement);
-                familyNameElement.getParent().removeContent(familyNameElement);
-            }
-
-
-
-        if(generateDisplayForm){
-            String displayForm = Stream.of(sureName, foreName).filter(Objects::nonNull).collect(Collectors.joining(", "));
-            displayFormElement.setText(displayForm);
-
-            if(displayNameCollect.contains(displayForm)){
-                modsName.detach();
-                return;
-            }
-
-            displayNameCollect.add(displayForm);
+        if (name.first() != null) {
+            givenNameElement.setText(name.first());
         } else {
-            if(displayNameCollect.contains(authorName)){
-                modsName.detach();
-                return;
-            }
-            displayFormElement.setText(authorName);
-            displayNameCollect.add(authorName);
+            givenNameElement.detach();
         }
 
+        if (name.last() != null) {
+            familyNameElement.setText(name.last());
+        } else {
+            familyNameElement.detach();
+        }
+
+        if (name.particle() != null) {
+            particleElement.setText(name.particle());
+        } else {
+            particleElement.detach();
+        }
+
+        displayFormElement.setText(name.display());
     }
 
     private void setParentID(){

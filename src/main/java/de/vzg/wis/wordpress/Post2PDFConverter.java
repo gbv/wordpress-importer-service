@@ -18,6 +18,10 @@
 
 package de.vzg.wis.wordpress;
 
+import de.vzg.wis.wordpress.NameUtil.Name;
+import de.vzg.wis.wordpress.model.MayAuthorList;
+import de.vzg.wis.wordpress.model.Post;
+import de.vzg.wis.wordpress.model.PostContent;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -37,7 +41,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.xml.transform.Result;
 import javax.xml.transform.Transformer;
@@ -48,7 +51,6 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import de.vzg.wis.wordpress.model.*;
 import org.apache.fop.apps.FOPException;
 import org.apache.fop.apps.FOUserAgent;
 import org.apache.fop.apps.FopFactory;
@@ -186,38 +188,11 @@ public class Post2PDFConverter {
                 .orElse(new MayAuthorList())
                 .getAuthorNames();
 
-        String combinedNamesStr;
-        if (authorIds != null && authorIds.size() > 0) {
-            combinedNamesStr = authorIds.stream().map(authorID -> {
-                        try {
-                            return AuthorFetcher.fetchAuthor(blog, authorID);
-                        } catch (IOException e) {
-                            throw new RuntimeException("Error while fetching Author " + authorID, e);
-                        }
-                    }).map(Author::getName)
-                    .collect(Collectors.joining(", "));
-        } else if (authorNames != null && authorNames.size()>0){
-            combinedNamesStr = String.join(", ", authorNames);
-        } else if (post.getDelegate1() != null || post.getDelegate2() != null || post.getDelegate3() != null) {
-            List<String> delegateAuthors = Stream.of(post.getDelegate1(), post.getDelegate2(), post.getDelegate3())
-                    .filter(Objects::nonNull)
-                    .filter(Predicate.not(String::isEmpty))
-                    .collect(Collectors.toList());
-            combinedNamesStr = String.join(", ", delegateAuthors);
-        } else {
-            combinedNamesStr = UserFetcher.fetchUser(blog, post.getAuthor()).getName();
-        }
-
-        if(post.getCoAuthors() != null && !post.getCoAuthors().isEmpty()) {
-            String filteredCoauthors = post.getCoAuthors()
-                    .stream()
-                    .map(CoAuthor::getDisplay_name)
-                    .filter(Predicate.not(combinedNamesStr::contains))
-                    .collect(Collectors.joining(", "));
-            if (!combinedNamesStr.isEmpty()) {
-                combinedNamesStr += ", " + filteredCoauthors;
-            }
-        }
+        String combinedNamesStr = NameUtil.getAuthors(post, blog).stream()
+            .filter(Objects::nonNull)
+            .map(Name::display)
+            .filter(Predicate.not(String::isBlank))
+            .collect(Collectors.joining(", "));
 
         htmlString += "<hr/><table border='0'><tr><td>" + combinedNamesStr + "</td>";
         String dateString = post.getDate();
