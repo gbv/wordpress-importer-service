@@ -180,14 +180,6 @@ public class Post2PDFConverter {
             htmlString += "<h2>" + subtitle + "</h2>";
         }
 
-        final List<Integer> authorIds = Optional.ofNullable(post.getAuthors())
-                .orElse(new MayAuthorList())
-                .getAuthorIds();
-
-        final List<String> authorNames = Optional.ofNullable(post.getAuthors())
-                .orElse(new MayAuthorList())
-                .getAuthorNames();
-
         String combinedNamesStr = NameUtil.getAuthors(post, blog).stream()
             .filter(Objects::nonNull)
             .map(Name::display)

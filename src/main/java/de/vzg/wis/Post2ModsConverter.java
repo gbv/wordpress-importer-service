@@ -211,7 +211,15 @@ public class Post2ModsConverter {
         modsName.addContent(particleElement);
 
         final Element modsElement = getElement(MODS_XPATH);
-        modsElement.addContent(modsElement.indexOf(getElement(MODS_TITLE_INFO)) + 1, modsName);
+
+        int insertIndex;
+        Element firstNameElement = modsElement.getChild("name", MODS_NAMESPACE);
+        if (firstNameElement != null) {
+            insertIndex = modsElement.indexOf(firstNameElement) + 1;
+        } else {
+            insertIndex = modsElement.indexOf(getElement(MODS_TITLE_INFO)) + 1;
+        }
+        modsElement.addContent(insertIndex, modsName);
 
         if (name.first() != null) {
             givenNameElement.setText(name.first());
