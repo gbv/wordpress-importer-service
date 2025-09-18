@@ -37,13 +37,16 @@ public class NameUtil {
 
     public static List<Name> getAuthors(Post blogPost, String blogURL) {
         final List<Integer> authorIds =
-            Optional.ofNullable(blogPost.getAuthors()).orElse(new MayAuthorList()).getAuthorIds();
+            new ArrayList<>(Optional.ofNullable(blogPost.getAuthors())
+                .map(MayAuthorList::getAuthorIds)
+                .orElse(new ArrayList<>()));
         final List<String> authorNames =
-            Optional.ofNullable(blogPost.getAuthors()).orElse(new MayAuthorList()).getAuthorNames();
+            new ArrayList<>(Optional.ofNullable(blogPost.getAuthors())
+                .map(MayAuthorList::getAuthorNames).orElse(new ArrayList<>()));
 
         final List<Name> authors = new ArrayList<>();
 
-        if (authorIds != null && !authorIds.isEmpty()) {
+        if (!authorIds.isEmpty()) {
             Collections.reverse(authorIds);
             for (Integer authorID : authorIds) {
                 final Author author;
@@ -58,7 +61,7 @@ public class NameUtil {
                     authors.add(createNameFromDisplayName(author.getName(), Role.AUTOR));
                 }
             }
-        } else if (authorNames != null && !authorNames.isEmpty()) {
+        } else if (!authorNames.isEmpty()) {
             Collections.reverse(authorNames);
             for (String authorName : authorNames) {
                 authors.add(createNameFromDisplayName(authorName, Role.AUTOR));
