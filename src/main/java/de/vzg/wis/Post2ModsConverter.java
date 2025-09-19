@@ -215,9 +215,9 @@ public class Post2ModsConverter {
         int insertIndex;
         List<Element> nameElements = modsElement.getChildren("name", MODS_NAMESPACE);
         if (nameElements.isEmpty()) {
-          insertIndex = modsElement.indexOf(getElement(MODS_TITLE_INFO)) + 1;
+            insertIndex = modsElement.indexOf(getElement(MODS_TITLE_INFO)) + 1;
         } else {
-          insertIndex = modsElement.indexOf(nameElements.get(nameElements.size()-1)) + 1;
+            insertIndex = modsElement.indexOf(nameElements.get(nameElements.size() - 1)) + 1;
         }
         modsElement.addContent(insertIndex, modsName);
 
