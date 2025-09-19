@@ -213,11 +213,11 @@ public class Post2ModsConverter {
         final Element modsElement = getElement(MODS_XPATH);
 
         int insertIndex;
-        Element firstNameElement = modsElement.getChild("name", MODS_NAMESPACE);
-        if (firstNameElement != null) {
-            insertIndex = modsElement.indexOf(firstNameElement) + 1;
+        List<Element> nameElements = modsElement.getChildren("name", MODS_NAMESPACE);
+        if (nameElements.isEmpty()) {
+          insertIndex = modsElement.indexOf(getElement(MODS_TITLE_INFO)) + 1;
         } else {
-            insertIndex = modsElement.indexOf(getElement(MODS_TITLE_INFO)) + 1;
+          insertIndex = modsElement.indexOf(nameElements.get(nameElements.size()-1)) + 1;
         }
         modsElement.addContent(insertIndex, modsName);
 
